@@ -1,6 +1,6 @@
 # Siren
 
-Siren is a *Twilio* frontend designed to make **mass text message campaigns** cheaper & more accessible for *non-profit organizations*
+Siren is a *Twilio* frontend designed to make **mass text message campaigns** cheaper & more accessible for **non-profit organizations**
 
 Most online *"mass texting"* services, especially those preying on non-profits, use Twilio as their back-end and implement **1,000% and more** *surcharges*.
 

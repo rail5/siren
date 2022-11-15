@@ -1,16 +1,30 @@
-# Run 'make' on Linux/MacOS to build native binaries (see 'Build Requirements' in README)
-# Run 'make windows' from Linux with MXE & Lazarus configured to build Win64 binaries
+# Run 'make' on GNU/Linux or MacOS to build native binaries to the bin/ folder (see 'Build Requirements' in README)
 
-# CROSS: The MXE (cross-compilation) prefix [keep default for Win64 builds]
+# Run 'make windows' from GNU/Linux with MXE & Lazarus configured to build Win64 binaries to the bin/ folder
+
+# Run 'make macos' from MacOS to build native binaries to the bin/ & create a .App bundle in the root folder
+
+# And of course 'make install' from GNU/Linux if desired
+
+# MACHINETYPE: Output of 'uname -s' (Tells us whether we're working on *nix or MacOS)
+MACHINETYPE=$(shell uname)
+
+# CROSS: The MXE (cross-compilation) prefix (for cross-compiling to windows) [keep default for Win64 builds]
 CROSS=x86_64-w64-mingw32.static
 
-# MXEDIRECTORY: Root directory of your MXE installation
+# MXEDIRECTORY: Root directory of your MXE installation (for cross-compiling to windows)
 MXEDIRECTORY=/opt/mxe/
 
 # LAZDIR: Root directory of your Lazarus installation (for building the GUI)
 LAZDIR=/usr/lib/lazarus/2.0.10
 
-# XLAZTARGET: Lazarus target for cross-compilation
+# MACLAZDIR: Root directory of your Lazarus installation IF you're on MacOS
+MACLAZDIR=/Applications/Lazarus
+
+# Intentionally blank unless we detect MacOS
+MACFLAGS=
+
+# XLAZTARGET: Lazarus target for cross-compilation (only used by 'windows' make target)
 XLAZTARGET=win64
 
 
@@ -37,7 +51,12 @@ core: $(SOURCES)
 	$(CXX) -o $(OUT) $(INCLUDE) $(LDFLAGS) $(CFLAGS) $(SOURCES) $(LDLIBS)
 
 frontend:
-	lazbuild --lazarusdir=$(LAZDIR) --build-mode=Release src/gui/siren-gui.lpr
+# Change LAZDIR and set widgetset to cocoa if we're on MacOS
+ifeq ($(MACHINETYPE),Darwin)
+	$(eval LAZDIR := $(MACLAZDIR))
+	$(eval MACFLAGS := --widgetset=cocoa)
+endif
+	$(LAZDIR)/lazbuild --lazarusdir=$(LAZDIR) $(MACFLAGS) --build-mode=Release src/gui/siren-gui.lpr
 	mv src/gui/siren-gui bin/siren-gui
 
 windows: wincore winfrontend
@@ -49,8 +68,18 @@ winfrontend:
 	lazbuild --lazarusdir=$(LAZDIR) --build-mode=Release --operating-system=$(XLAZTARGET) src/gui/siren-gui.lpr
 	mv src/gui/siren-gui.exe bin/siren-gui.exe
 
+macos: core frontend macpkg
+
+macpkg:
+	mkdir -p siren-gui.app/Contents/MacOS
+	mkdir -p siren-gui.app/Contents/Resources
+	echo "APPL????" > siren-gui.app/Contents/PkgInfo
+	cp Info.plist siren-gui.app/Contents/
+	cp bin/siren siren-gui.app/Contents/MacOS/
+	cp bin/siren-gui siren-gui.app/Contents/MacOS/
+
 install:
 	echo placeholder
 
 clean:
-	rm -rf bin/siren bin/siren.exe bin/siren-gui bin/siren-gui.exe src/gui/lib
+	rm -rf bin/siren bin/siren.exe bin/siren-gui bin/siren-gui.exe src/gui/lib siren-gui.app

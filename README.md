@@ -4,7 +4,7 @@ The **very morning after** this code was posted on Github, Twilio announced that
 
 I'm leaving this code up here for now but I will not add build instructions or binary releases as I originally promised below.
 
-It's unfortunate that Twilio decided to make mass texting & efficient outreach **even more difficult* for non-profit and political organizations. It's a capitalist's world.
+It's unfortunate that Twilio decided to make mass texting & efficient outreach *even more difficult* for non-profit and political organizations. It's a capitalist's world.
 
 # Siren
 

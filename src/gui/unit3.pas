@@ -93,6 +93,7 @@ begin
 		FirstName := '';
 		NumberAndName := TStringList.Create;
 		NumberAndName.Delimiter := ',';
+		NumberAndName.StrictDelimiter := true; // Do not treat spaces & quotes specially, only treat the specified delimiter
 		NumberAndName.DelimitedText := phonelist.Strings[i]; // Split each line from phone list into an array, separated by commas
 
 		PhoneNumber := NumberAndName[0];
@@ -107,6 +108,12 @@ begin
 		if (NumberAndName.Count > 1) then
 		begin
 			FirstName := NumberAndName[1]; // Set FirstName to value if specified in the list
+			
+			if (FirstName.StartsWith(' ')) then
+			begin
+				Delete(FirstName, 1, 1); // Remove trailing space
+			end
+			
 		end;
 
 		// Replace occurrences of "{name}" (case-insensitive) with recorded FirstName
@@ -150,4 +157,3 @@ begin
 end;
 
 end.
-

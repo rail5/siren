@@ -266,7 +266,7 @@ var
 	singlemessagecost : real = 0.0079;
 	costperrecipient : real;
 begin
-	messagelength := Edit1.GetTextLen;
+	messagelength := Length(Edit1.Text);
 	// The maximum length of a single SMS message is 160 characters.
 	// In the event that we try to send a longer message,
 	// the message is split into segments of 153 characters each

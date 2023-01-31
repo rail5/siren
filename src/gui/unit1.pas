@@ -10,7 +10,7 @@ interface
 
 uses
 	Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, Menus,
-	XMLPropStorage, Process, Unit2, Unit3;
+	XMLPropStorage, Process, Math, Unit2, Unit3;
 
 type
 
@@ -23,6 +23,8 @@ type
 		Label2: TLabel;
 		Label3: TLabel;
 		Label4: TLabel;
+                Label5: TLabel;
+                Label6: TLabel;
 		MainMenu1: TMainMenu;
 		Memo1: TMemo;
 		MenuItem1: TMenuItem;
@@ -32,7 +34,8 @@ type
 		MenuItem6: TMenuItem;
 		MenuItem7: TMenuItem;
 		XMLConfig1: TXMLPropStorage;
-		procedure MenuItem5Click(Sender: TObject);
+                procedure Edit1Change(Sender: TObject);
+  procedure MenuItem5Click(Sender: TObject);
 		procedure MenuItem7Click(Sender: TObject);
 		function CanConnect() : boolean;
 		function SendText(Message : string; ToNumber : string) : boolean;
@@ -256,10 +259,30 @@ begin
 	Application.Terminate;
 end;
 
+procedure TForm1.Edit1Change(Sender: TObject);
+var
+	messagelength : integer;
+	messagesegments : integer;
+	singlemessagecost : real = 0.0079;
+	costperrecipient : real;
+begin
+	messagelength := Edit1.GetTextLen;
+	// The maximum length of a single SMS message is 160 characters.
+	// In the event that we try to send a longer message,
+	// the message is split into segments of 153 characters each
+	// (153 for each message, reserving the other 7 for a message header
+	// which specifies which segment this is, and how to reassemble the
+	// full message)
+	// Twilio will charge for each message segment, and the user should
+	// be informed
+	messagesegments := Ceil(messagelength / 153);
+	costperrecipient := singlemessagecost * messagesegments;
+	Label5.Caption := 'Cost: $' + FloatToStr(costperrecipient) + ' per recipient (approximately)';
+end;
+
 procedure TForm1.Button1Click(Sender: TObject);
 begin
 	Form3.ShowModal; // Runs SendMassTexts onShow
 end;
 
 end.
-

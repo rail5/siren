@@ -1,9 +1,3 @@
-The **very morning after** this code was posted on Github, Twilio announced that they were changing some of their policies & rules, specifically for non-profits. This program was suddenly against the rules.
-
-I'm leaving this code up here for now but I will not add build instructions or binary releases as I originally promised below.
-
-It's unfortunate that Twilio decided to make mass texting & efficient outreach *even more difficult* for non-profit and political organizations.
-
 # Siren
 
 Siren is a *Twilio* frontend designed to make **mass text message campaigns** cheaper & more accessible for **non-profit organizations**.

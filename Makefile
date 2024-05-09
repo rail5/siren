@@ -16,7 +16,7 @@ CROSS=x86_64-w64-mingw32.static
 MXEDIRECTORY=/opt/mxe/
 
 # LAZDIR: Root directory of your Lazarus installation (for building the GUI)
-LAZDIR=/usr/lib/lazarus/2.0.10
+LAZDIR=/usr/lib/lazarus/2.2.6
 
 # MACLAZDIR: Root directory of your Lazarus installation IF you're on MacOS
 MACLAZDIR=/Applications/Lazarus

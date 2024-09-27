@@ -1,7 +1,7 @@
 Source: siren
 Priority: optional
 Maintainer: rail5 <andrew@rail5.org>
-Build-Depends: debhelper (>= 10.0.0), lazarus-2.2, lcl-2.2, lcl-utils-2.2, fp-units-misc-3.2.2
+Build-Depends: debhelper (>= 10.0.0), lazarus-2.2, lcl-2.2, lcl-utils-2.2, fp-units-misc-3.2.2, libcurl4-openssl-dev | libcurl4-nss-dev | libcurl4-gnutls-dev
 Standards-Version: 3.9.3
 Section: utils
 

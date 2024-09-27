@@ -22,7 +22,7 @@ AppUpdatesURL={#MyAppURL}
 DefaultDirName={pf}\{#MyAppName}
 DisableDirPage=yes
 DisableProgramGroupPage=yes
-LicenseFile=.\LICENSE
+LicenseFile=LICENSE
 OutputDir=.\bin
 OutputBaseFilename=Siren-Installer
 SetupIconFile=.\src\gui\siren.ico
@@ -36,8 +36,8 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: ".\bin\siren-gui.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: ".\bin\siren.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "bin\siren-gui.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "bin\siren.exe"; DestDir: "{app}"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]

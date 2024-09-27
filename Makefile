@@ -85,4 +85,4 @@ install:
 	echo placeholder
 
 clean:
-	rm -rf bin/siren bin/siren.exe bin/siren-gui bin/siren-gui.exe src/gui/lib siren-gui.app
+	rm -rf bin/siren bin/siren.exe bin/siren-gui bin/siren-gui.exe bin/Siren-Installer.exe src/gui/lib siren-gui.app

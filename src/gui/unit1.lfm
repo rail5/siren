@@ -1,136 +1,157 @@
 object Form1: TForm1
-  Left = 831
-  Height = 553
-  Top = 236
-  Width = 673
-  Caption = 'Siren'
-  ClientHeight = 526
-  ClientWidth = 673
-  Menu = MainMenu1
-  OnClose = FormClose
-  OnShow = FormShow
-  LCLVersion = '2.0.10.0'
-  object Label1: TLabel
-    Left = 8
-    Height = 24
-    Top = 88
-    Width = 191
-    AutoSize = False
-    Caption = 'Enter your message here:'
-    ParentColor = False
-  end
-  object Button1: TButton
-    Left = 240
-    Height = 48
-    Top = 448
-    Width = 171
-    Caption = 'Send messages'
-    OnClick = Button1Click
-    TabOrder = 0
-  end
-  object Label2: TLabel
-    Left = 496
-    Height = 33
-    Top = 0
-    Width = 152
-    AutoSize = False
-    Caption = 'You are not signed in'
-    ParentColor = False
-  end
-  object Label3: TLabel
-    Left = 496
-    Height = 17
-    Top = 24
-    Width = 79
-    Caption = 'Balance: $0'
-    ParentColor = False
-  end
-  object Edit1: TMemo
-    Left = 8
-    Height = 282
-    Top = 112
-    Width = 420
-    Lines.Strings = (
-      'Hello {name}!'
-    )
-    MaxLength = 1600
-    OnChange = Edit1Change
-    ScrollBars = ssAutoVertical
-    TabOrder = 1
-  end
-  object Memo1: TMemo
-    Left = 441
-    Height = 282
-    Top = 112
-    Width = 190
-    Lines.Strings = (
-      '123-456-7890'
-      '555-555-5555, Brian'
-      '0123456789'
-      '0001112222, Sarah'
-    )
-    ScrollBars = ssAutoVertical
-    TabOrder = 2
-  end
-  object Label4: TLabel
-    Left = 440
-    Height = 34
-    Top = 71
-    Width = 177
-    Caption = 'Enter phone numbers here:'#10'(one per line)'
-    ParentColor = False
-  end
-  object Label5: TLabel
-    Left = 8
-    Height = 17
-    Top = 400
-    Width = 286
-    Caption = 'Cost: $0.0079 per recipient (approximately)'
-    ParentColor = False
-  end
-  object Label6: TLabel
-    Left = 8
-    Height = 17
-    Top = 424
-    Width = 241
-    Caption = '(Longer messages cost more to send)'
-    ParentColor = False
-  end
-  object MainMenu1: TMainMenu
-    Left = 32
-    object MenuItem1: TMenuItem
-      Caption = 'Settings'
-      object MenuItem2: TMenuItem
-        Caption = 'Twilio Account'
-        OnClick = MenuItem2Click
-      end
-      object MenuItem4: TMenuItem
-        Caption = '-'
-      end
-      object MenuItem5: TMenuItem
-        Caption = 'Quit'
-        OnClick = MenuItem5Click
-      end
-    end
-    object MenuItem6: TMenuItem
-      Caption = 'Help'
-      object MenuItem7: TMenuItem
-        Caption = 'About'
-        OnClick = MenuItem7Click
-      end
-    end
-  end
-  object XMLConfig1: TXMLPropStorage
-    StoredValues = <    
-      item
-        Name = 'TWAccountID'
-      end    
-      item
-        Name = 'TWAuthToken'
-      end    
-      item
-        Name = 'TWFromNumber'
-      end>
-    FileName = '/tmp/siren-config.xml'
-  end
+	Left = 10
+	Height = 553
+	Top = 28
+	Width = 673
+	Caption = 'Siren'
+	ClientHeight = 526
+	ClientWidth = 673
+	Menu = MainMenu1
+	OnClose = FormClose
+	OnShow = FormShow
+	LCLVersion = '2.2.6.0'
+	object Label1: TLabel
+		Left = 8
+		Height = 24
+		Top = 88
+		Width = 191
+		AutoSize = False
+		Caption = 'Enter your message here:'
+		ParentColor = False
+	end
+	object Button1: TButton
+		Left = 240
+		Height = 48
+		Top = 448
+		Width = 171
+		Caption = 'Send messages'
+		OnClick = Button1Click
+		TabOrder = 0
+	end
+	object Label2: TLabel
+		Left = 496
+		Height = 33
+		Top = 0
+		Width = 152
+		AutoSize = False
+		Caption = 'You are not signed in'
+		ParentColor = False
+	end
+	object Label3: TLabel
+		Left = 496
+		Height = 19
+		Top = 24
+		Width = 77
+		Caption = 'Balance: $0'
+		ParentColor = False
+	end
+	object Edit1: TMemo
+		Left = 8
+		Height = 282
+		Top = 112
+		Width = 420
+		Lines.Strings = (
+			'Hello {name}!'
+		)
+		MaxLength = 1600
+		OnChange = Edit1Change
+		ScrollBars = ssAutoVertical
+		TabOrder = 1
+	end
+	object Memo1: TMemo
+		Left = 441
+		Height = 282
+		Top = 112
+		Width = 190
+		Lines.Strings = (
+			'123-456-7890'
+			'555-555-5555, Brian'
+			'0123456789'
+			'0001112222, Sarah'
+		)
+		OnChange = Memo1Change
+		ScrollBars = ssAutoVertical
+		TabOrder = 2
+	end
+	object Label4: TLabel
+		Left = 440
+		Height = 38
+		Top = 71
+		Width = 177
+		Caption = 'Enter phone numbers here:'#10'(one per line)'
+		ParentColor = False
+	end
+	object Label5: TLabel
+		Left = 8
+		Height = 19
+		Top = 400
+		Width = 235
+		Caption = 'Cost: $0.0079 per recipient (approx)'
+		ParentColor = False
+	end
+	object Label6: TLabel
+		Left = 8
+		Height = 19
+		Top = 424
+		Width = 240
+		Caption = '(Longer messages cost more to send)'
+		ParentColor = False
+	end
+	object Label7: TLabel
+		Left = 441
+		Height = 19
+		Top = 400
+		Width = 180
+		Caption = 'Total cost: $0.0316 (approx)'
+		ParentColor = False
+	end
+	object Label8: TLabel
+		Left = 441
+		Height = 19
+		Top = 424
+		Width = 184
+		Caption = 'Sending to 4 phone numbers'
+		ParentColor = False
+	end
+	object MainMenu1: TMainMenu
+		Left = 32
+		object MenuItem1: TMenuItem
+			Caption = 'Settings'
+			object MenuItem2: TMenuItem
+				Caption = 'Twilio Account'
+				OnClick = MenuItem2Click
+			end
+			object MenuItem4: TMenuItem
+				Caption = '-'
+			end
+			object MenuItem5: TMenuItem
+				Caption = 'Quit'
+				OnClick = MenuItem5Click
+			end
+		end
+		object MenuItem6: TMenuItem
+			Caption = 'Help'
+			object MenuItem7: TMenuItem
+				Caption = 'About'
+				OnClick = MenuItem7Click
+			end
+		end
+		object MenuItem8: TMenuItem
+			Caption = 'Recharge Account'
+			OnClick = MenuItem8Click
+		end
+	end
+	object XMLConfig1: TXMLPropStorage
+		StoredValues = <		
+			item
+				Name = 'TWAccountID'
+			end		
+			item
+				Name = 'TWAuthToken'
+			end		
+			item
+				Name = 'TWFromNumber'
+			end>
+		FileName = '/tmp/siren-config.xml'
+	end
 end

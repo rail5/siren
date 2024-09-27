@@ -10,7 +10,7 @@ interface
 
 uses
 	Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, Menus,
-	XMLPropStorage, Process, Math, Unit2, Unit3;
+	XMLPropStorage, Process, lclintf, Math, Unit2, Unit3;
 
 type
 
@@ -23,8 +23,10 @@ type
 		Label2: TLabel;
 		Label3: TLabel;
 		Label4: TLabel;
-                Label5: TLabel;
-                Label6: TLabel;
+		Label5: TLabel;
+		Label6: TLabel;
+		Label7: TLabel;
+		Label8: TLabel;
 		MainMenu1: TMainMenu;
 		Memo1: TMemo;
 		MenuItem1: TMenuItem;
@@ -33,10 +35,14 @@ type
 		MenuItem5: TMenuItem;
 		MenuItem6: TMenuItem;
 		MenuItem7: TMenuItem;
+		MenuItem8: TMenuItem;
 		XMLConfig1: TXMLPropStorage;
-                procedure Edit1Change(Sender: TObject);
-  procedure MenuItem5Click(Sender: TObject);
+		procedure update_total_cost();
+		procedure Edit1Change(Sender: TObject);
+		procedure Memo1Change(Sender: TObject);
+		procedure MenuItem5Click(Sender: TObject);
 		procedure MenuItem7Click(Sender: TObject);
+		procedure MenuItem8Click(Sender: TObject);
 		function CanConnect() : boolean;
 		function SendText(Message : string; ToNumber : string) : boolean;
 		function GetBalance : string;
@@ -67,6 +73,8 @@ var
 	TWInfoIsAuthenticated : boolean;
 	TWBalance : string;
 	SirenCorePath : string;
+	cost_per_recipient : real = 0.0079;
+	number_of_recipients : integer = 4;
 
 implementation
 
@@ -140,7 +148,7 @@ begin
 
 	if (TWInfoIsFilledOut) then
 	begin
-	     TWInfoIsAuthenticated := CanAuthenticate();
+		TWInfoIsAuthenticated := CanAuthenticate();
 
 		if (not TWInfoIsAuthenticated) then
 		begin
@@ -219,12 +227,12 @@ begin
 
 	if (RunCommand(SirenCorePath, ['-i'], ReturnValue, [], swoHide)) then
 	begin
-	   CanConnect := (ReturnValue = '1');
+		CanConnect := (ReturnValue = '1');
 	end
 	else
 	begin
-	    ShowMessage('Fatal error. Please re-install Siren');
-	    CanConnect := false;
+		ShowMessage('Fatal error. Please re-install Siren');
+		CanConnect := false;
 	end;
 end;
 
@@ -249,6 +257,11 @@ begin
 
 end;
 
+procedure TForm1.MenuItem8Click(Sender: TObject);
+begin
+	OpenURL('https://console.twilio.com/us1/billing/manage-billing/billing-overview');
+end;
+
 procedure TForm1.MenuItem7Click(Sender: TObject);
 begin
 	ShowMessage('Siren is a free & open-source program primarily intended for use by non-profits' + #13#10 + 'It acts as a desktop frontend for Twilio, making mass texting accessible & affordable' + #13#10 + 'In order to use this program, you need a Twilio account');
@@ -259,12 +272,20 @@ begin
 	Application.Terminate;
 end;
 
+procedure TForm1.update_total_cost();
+var
+	total_cost : real;
+begin
+	total_cost := cost_per_recipient * number_of_recipients;
+	Label7.Caption := 'Total cost: $' + FloatToStr(total_cost) + ' (approx)';
+	Label8.Caption := 'Sending to ' + IntToStr(number_of_recipients) + ' phone numbers';
+end;
+
 procedure TForm1.Edit1Change(Sender: TObject);
 var
 	messagelength : integer;
 	messagesegments : integer;
 	singlemessagecost : real = 0.0079;
-	costperrecipient : real;
 begin
 	messagelength := Length(Edit1.Text);
 	// The maximum length of a single SMS message is 160 characters.
@@ -276,8 +297,15 @@ begin
 	// Twilio will charge for each message segment, and the user should
 	// be informed
 	messagesegments := Ceil(messagelength / 153);
-	costperrecipient := singlemessagecost * messagesegments;
-	Label5.Caption := 'Cost: $' + FloatToStr(costperrecipient) + ' per recipient (approximately)';
+	cost_per_recipient := singlemessagecost * messagesegments; // Update the global cost_per_recipient variable
+	Label5.Caption := 'Cost: $' + FloatToStr(cost_per_recipient) + ' per recipient (approx)';
+	update_total_cost();
+end;
+
+procedure TForm1.Memo1Change(Sender: TObject);
+begin
+	number_of_recipients := Memo1.Lines.Count;
+	update_total_cost();
 end;
 
 procedure TForm1.Button1Click(Sender: TObject);

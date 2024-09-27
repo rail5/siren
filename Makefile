@@ -59,7 +59,7 @@ endif
 	$(LAZDIR)/lazbuild --lazarusdir=$(LAZDIR) $(MACFLAGS) --build-mode=Release src/gui/siren-gui.lpr
 	mv src/gui/siren-gui bin/siren-gui
 
-windows: wincore winfrontend
+windows: wincore winfrontend wininstaller
 
 wincore: $(SOURCES)
 	$(XCC) -o $(OUT).exe $(XINCLUDE) $(XLDFLAGS) $(CFLAGS) $(SOURCES) $(XLDLIBS)
@@ -67,6 +67,9 @@ wincore: $(SOURCES)
 winfrontend:
 	lazbuild --lazarusdir=$(LAZDIR) --build-mode=Release --operating-system=$(XLAZTARGET) src/gui/siren-gui.lpr
 	mv src/gui/siren-gui.exe bin/siren-gui.exe
+
+wininstaller:
+	wine ~/.wine/drive_c/Program\ Files\ \(x86\)/Inno\ Setup\ 6/ISCC.exe ./siren-installer.iss
 
 macos: core frontend macpkg
 

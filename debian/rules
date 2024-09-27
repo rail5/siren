@@ -1,0 +1,13 @@
+#!/usr/bin/make -f
+%:
+	dh $@
+
+override_dh_strip:
+	dh_strip --no-automatic-dbgsym
+
+override_dh_auto_install:
+	install -D -m 0755 bin/siren $$(pwd)/debian/siren/usr/bin/siren
+	install -D -m 0755 bin/siren-gui $$(pwd)/debian/siren/usr/bin/siren-gui
+	mkdir -p $$(pwd)/debian/siren/usr/share/siren
+	cp src/gui/siren.ico $$(pwd)/debian/siren/usr/share/siren/siren.ico
+	install -D -m 0755 Siren.desktop $$(pwd)/debian/siren/usr/share/applications/Siren.desktop

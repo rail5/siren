@@ -1,0 +1,14 @@
+[Desktop Entry]
+Version=1
+Type=Application
+Name=Siren
+Comment=Mass texting (Twilio desktop frontend)
+GenericName=Mass text messager
+TryExec=siren-gui
+Exec=siren-gui
+Icon=/usr/share/siren/siren.ico
+Categories=Network;
+Keywords=siren;siren-gui;twilio;text;texting;mass;
+StartupNotify=true
+X-GNOME-UsesNotifications=false
+Name[en_US]=Siren

@@ -54,7 +54,7 @@
 						</Options>
 					</Linking>
 					<Other>
-						<CustomOptions Value="-Cg -k-pie -k-znow"/>
+						<CustomOptions Value="-Cg -k-pie"/>
 					</Other>
 				</CompilerOptions>
 			</Item2>
@@ -91,7 +91,7 @@
 						</Options>
 					</Linking>
 					<Other>
-						<CustomOptions Value="-Cg -k-pie -k-znow"/>
+						<CustomOptions Value="-Cg -k-pie"/>
 					</Other>
 				</CompilerOptions>
 			</Item3>
@@ -160,7 +160,7 @@
 			</Options>
 		</Linking>
 		<Other>
-			<CustomOptions Value="-Cg -k-pie -k-znow"/>
+			<CustomOptions Value="-Cg -k-pie"/>
 		</Other>
 	</CompilerOptions>
 	<Debugging>

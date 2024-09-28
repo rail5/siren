@@ -31,7 +31,7 @@
 						</Options>
 					</Linking>
 					<Other>
-						<CustomOptions Value="-Cg -k-pie -k-znow"/>
+						<CustomOptions Value="-Cg -k-pie"/>
 					</Other>
 				</CompilerOptions>
 			</Item1>

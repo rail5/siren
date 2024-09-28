@@ -82,7 +82,7 @@ macpkg:
 	cp bin/siren-gui bin/macos/Siren.app/Contents/MacOS/
 
 macdmg:
-	ln -s /Applications "bin/macos/Drag Siren.app here"
+	ln -s /Applications "bin/macos/Drag Siren here"
 	hdiutil create bin/Install-Siren.dmg -ov -volname "Install Siren" -fs HFS+ -srcfolder bin/macos/
 	hdiutil convert bin/Install-Siren.dmg -format UDZO -o bin/Siren.dmg
 	rm -f bin/Install-Siren.dmg

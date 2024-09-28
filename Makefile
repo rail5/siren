@@ -71,18 +71,24 @@ winfrontend:
 wininstaller:
 	wine ~/.wine/drive_c/Program\ Files\ \(x86\)/Inno\ Setup\ 6/ISCC.exe ./siren-installer.iss
 
-macos: core frontend macpkg
+macos: core frontend macpkg macdmg
 
 macpkg:
-	mkdir -p siren-gui.app/Contents/MacOS
-	mkdir -p siren-gui.app/Contents/Resources
-	echo "APPL????" > siren-gui.app/Contents/PkgInfo
-	cp Info.plist siren-gui.app/Contents/
-	cp bin/siren siren-gui.app/Contents/MacOS/
-	cp bin/siren-gui siren-gui.app/Contents/MacOS/
+	mkdir -p bin/macos/Siren.app/Contents/MacOS
+	mkdir -p bin/macos/Siren.app/Contents/Resources
+	echo "APPL????" > bin/macos/Siren.app/Contents/PkgInfo
+	cp Info.plist bin/macos/Siren.app/Contents/
+	cp bin/siren bin/macos/Siren.app/Contents/MacOS/
+	cp bin/siren-gui bin/macos/Siren.app/Contents/MacOS/
+
+macdmg:
+	ln -s /Applications "bin/macos/Drag Siren.app here"
+	hdiutil create bin/Install-Siren.dmg -ov -volname "Install Siren" -fs HFS+ -srcfolder bin/macos/
+	hdiutil convert bin/Install-Siren.dmg -format UDZO -o bin/Siren.dmg
+	rm -f bin/Install-Siren.dmg
 
 install:
 	echo placeholder
 
 clean:
-	rm -rf bin/siren bin/siren.exe bin/siren-gui bin/siren-gui.exe bin/Siren-Installer.exe src/gui/lib siren-gui.app
+	rm -rf bin/siren bin/siren.exe bin/siren-gui bin/siren-gui.exe bin/Siren-Installer.exe src/gui/lib bin/macos bin/Siren.dmg bin/Install-Siren.dmg

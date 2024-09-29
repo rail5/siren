@@ -1,3 +1,13 @@
+siren (0.10) unstable; urgency=medium
+
+  * Removed ancient debugging message that gave a spooky error to
+    windows users
+  * Fixed windows ability to find siren core binary
+  * Now generating Installer .exe file for Windows users
+  * Added procedure to build macOS dmg installer for macOS users
+
+ -- rail5 <andrew@rail5.org>  Sun, 29 Sep 2024 09:53:12 +0800
+
 siren (0.9) unstable; urgency=low
 
   * Initial binary release

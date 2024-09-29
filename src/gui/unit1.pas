@@ -103,8 +103,6 @@ begin
 	TWAccountID := XMLConfig1.StoredValue['TWAccountID'];
 	TWAuthToken := XMLConfig1.StoredValue['TWAuthToken'];
 	TWFromNumber := XMLConfig1.StoredValue['TWFromNumber'];
-
-	WriteLn(XMLConfig1.StoredValue['TWAccountID']);
 end;
 
 procedure TForm1.MarkNotAuthenticated;

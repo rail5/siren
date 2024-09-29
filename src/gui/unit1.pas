@@ -58,6 +58,7 @@ type
 		procedure MenuItem2Click(Sender: TObject);
 		procedure StoreFormState;
 		procedure RestoreFormState;
+		function SirenCorePath() : string;
 	private
 
 	public
@@ -72,7 +73,6 @@ var
 	TWInfoIsFilledOut : boolean;
 	TWInfoIsAuthenticated : boolean;
 	TWBalance : string;
-	SirenCorePath : string;
 	cost_per_recipient : real = 0.0079;
 	number_of_recipients : integer = 4;
 
@@ -119,6 +119,25 @@ begin
 	Form2.MarkSettingsAuthenticated;
 end;
 
+function TForm1.SirenCorePath : string;
+var
+	response : string;
+	slash : string;
+begin
+		slash := '/';
+	{$if defined(windows)}
+		slash := '\';
+	{$ifend}
+	if RunCommand('siren', ['-h'], response, [], swoHide) then
+		begin
+			SirenCorePath := 'siren';
+		end
+	else
+		begin
+			SirenCorePath := ExtractFilePath(Application.ExeName) + slash + 'siren';
+		end;
+end;
+
 procedure TForm1.FormClose(Sender: TObject; var CloseAction: TCloseAction);
 begin
 	StoreFormState;
@@ -132,8 +151,6 @@ begin
 	TWInfoIsFilledOut := ((TWAccountID <> '') and (TWAuthToken <> '') and (TWFromNumber <> ''));
 
 	TWInfoIsAuthenticated := false;
-
-	SirenCorePath := ExtractFilePath(Application.ExeName) + '/siren';
 
 	if (not CanConnect()) then
 		begin

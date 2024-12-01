@@ -36,6 +36,7 @@ type
 		MenuItem6: TMenuItem;
 		MenuItem7: TMenuItem;
 		MenuItem8: TMenuItem;
+		MenuItem9: TMenuItem;
 		XMLConfig1: TXMLPropStorage;
 		procedure update_total_cost();
 		procedure Edit1Change(Sender: TObject);
@@ -43,6 +44,7 @@ type
 		procedure MenuItem5Click(Sender: TObject);
 		procedure MenuItem7Click(Sender: TObject);
 		procedure MenuItem8Click(Sender: TObject);
+		procedure MenuItem9Click(Sender: TObject);
 		function CanConnect() : boolean;
 		function SendText(Message : string; ToNumber : string) : boolean;
 		function GetBalance : string;
@@ -373,6 +375,31 @@ end;
 procedure TForm1.Button1Click(Sender: TObject);
 begin
 	Form3.ShowModal; // Runs SendMassTexts onShow
+end;
+
+procedure TForm1.MenuItem9Click(Sender: TObject);
+var
+	MemoDialog: TForm;
+	Memo: TMemo;
+begin
+	MemoDialog := TForm.Create(nil);
+	try
+		MemoDialog.Width := 400;
+		MemoDialog.Height := 300;
+		MemoDialog.Caption := 'Unsubscribed / Invalid Numbers';
+
+		Memo := TMemo.Create(MemoDialog);
+		Memo.Parent := MemoDialog;
+		Memo.Align := alClient;
+		Memo.ReadOnly := true;
+		Memo.ScrollBars := ssVertical;
+		
+		Memo.Lines.AddStrings(unsubscribed_numbers);
+
+		MemoDialog.ShowModal;
+	finally
+		MemoDialog.Free;
+	end;
 end;
 
 end.

@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Siren"
-#define MyAppVersion "0.10"
+#define MyAppVersion "0.11"
 #define MyAppPublisher "rail5"
 #define MyAppURL "https://github.com/rail5/siren"
 #define MyAppExeName "siren-gui.exe"

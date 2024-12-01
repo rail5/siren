@@ -23,10 +23,11 @@ int main(int argc, char * argv[])
 	bool checkbalance = false;
 	bool checkauth = false;
 	bool checkconnection = false;
+	bool getunsubscribednumbers = false;
 
 	opterr = 0;
 
-	while ((cmd = getopt(argc, argv, "a:s:m:f:t:p:vhbci?")) != -1) {
+	while ((cmd = getopt(argc, argv, "a:s:m:f:t:p:vhbcui?")) != -1) {
 		switch (cmd) {
 			case '?':
 			case 'h':
@@ -48,6 +49,7 @@ int main(int argc, char * argv[])
 				       "(ex: -p \"Hello, Twilio!\")\n");
 				printf("-v: Verbose Mode\n");
 				printf("-b: Print account balance and exit\n");
+				printf("-u: Print unsubscribed/invalid numbers and exit\n");
 				printf("-c: Check Twilio credentials and exit (prints '1' if authenticated, '0' if not)\n");
 				printf("-i: Check if we can connect to the Twilio server (prints '1' if can connect, '0' if cannot)\n");
 				printf("-h: This help dialog\n");
@@ -73,21 +75,24 @@ int main(int argc, char * argv[])
 			case 'v':
 				verbose = true;
 				break;
-		       	case 'b':
-		       		checkbalance = true;
-		       		break;
-		       	case 'c':
-		       		checkauth = true;
-		       		break;
-		       	case 'i':
-		       		checkconnection = true;
-		       		break;
+			case 'b':
+				checkbalance = true;
+				break;
+			case 'c':
+				checkauth = true;
+				break;
+			case 'i':
+				checkconnection = true;
+				break;
+			case 'u':
+				getunsubscribednumbers = true;
+				break;
 			default:
 				abort();
 		}
 	}
 
-	if ((account_sid.empty() or auth_token.empty()) && !checkconnection) {
+	if ((account_sid.empty() || auth_token.empty()) && !checkconnection) {
 		cout<< "You didn't include all necessary inputs!" << endl << "Call using -h for help." << endl;
 		return -1;
 	}
@@ -118,7 +123,17 @@ int main(int argc, char * argv[])
 		return 0;
 	}
 
-	if (from_number.empty() or to_number.empty() or message.empty()) {
+	// Are we just checking unsubscribed numbers?
+	if (getunsubscribednumbers) {
+		auto numbers = twilio->unsubscribed_numbers();
+
+		for (auto& number : numbers) {
+			cout << number << endl;
+		}
+		return 0;
+	}
+
+	if (from_number.empty() || to_number.empty() || message.empty()) {
 		cout << "You didn't include all necessary inputs! " << endl << "Call using -h for help" << endl;
 		return -1;
 	}

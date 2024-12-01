@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <set>
 #include "type_conversion.hh"
 
 namespace twilio {
@@ -26,6 +27,8 @@ public:
 	);
 
 	std::string account_balance();
+
+	std::set<std::string> unsubscribed_numbers();
 
 	bool can_authenticate();
 	

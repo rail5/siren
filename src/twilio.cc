@@ -6,6 +6,7 @@
 #include "json.hpp"
 
 #include <iostream>
+#include <set>
 
 using json = nlohmann::json;
 
@@ -184,6 +185,90 @@ std::string Twilio::account_balance() {
 	
 	return response;
 
+}
+
+std::set<std::string> Twilio::unsubscribed_numbers() {
+	CURL *curl;
+	curl_global_init(CURL_GLOBAL_ALL);
+	curl = curl_easy_init();
+	
+	std::stringstream response_stream;
+	
+	std::string response;
+	
+	std::stringstream url;
+	std::string url_string;
+	url << "https://api.twilio.com/2010-04-01/Accounts/" << account_sid
+		<< "/Messages.json?Status=failed&PageSize=5000";
+	url_string = url.str();
+	
+	curl_easy_setopt(curl, CURLOPT_HTTPGET, 1);
+	curl_easy_setopt(curl, CURLOPT_URL, url_string.c_str());
+	curl_easy_setopt(curl, CURLOPT_USERNAME, account_sid.c_str());
+	curl_easy_setopt(curl, CURLOPT_PASSWORD, auth_token.c_str());
+	
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, _stream_write);
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response_stream);
+	
+	CURLcode res = curl_easy_perform(curl);
+	curl_easy_cleanup(curl);
+	long http_code = 0;
+	curl_easy_getinfo (curl, CURLINFO_RESPONSE_CODE, &http_code);
+
+	// Check for curl errors and Twilio failure status codes.
+	if (res != CURLE_OK) {
+		response = curl_easy_strerror(res);
+		return std::set<std::string>();
+	} else if (http_code != 200 && http_code != 201) {
+		response = "Error: " + response_stream.str();
+		return std::set<std::string>();
+	} else {
+		response = response_stream.str();
+	}
+	
+	json data = json::parse(response);
+	
+	std::set<std::string> numbers;
+	
+	for (auto& number : data["messages"]) {
+		// What was the error code?
+		// 21610 is the error code for "Unsubscribed"
+		// 30006 is the error code for "Absent Subscriber"
+		// 21211 is the error code for "Invalid Phone Number"
+		// We want to ignore all other error codes
+		if (number["error_code"] != 21610 &&
+			number["error_code"] != 30006 &&
+			number["error_code"] != 21211) {
+			continue;
+		}
+		std::string this_number = number["to"].get<std::string>();
+		// Remove hypens, spaces, and parantheses
+		this_number.erase(
+			std::remove(this_number.begin(), this_number.end(), '-'),
+			this_number.end()
+		);
+		this_number.erase(
+			std::remove(this_number.begin(), this_number.end(), ' '),
+			this_number.end()
+		);
+		this_number.erase(
+			std::remove(this_number.begin(), this_number.end(), '('),
+			this_number.end()
+		);
+		this_number.erase(
+			std::remove(this_number.begin(), this_number.end(), ')'),
+			this_number.end()
+		);
+
+		// If the number is prefaced with a country code, remove it
+		if (this_number.size() > 10) {
+			this_number = this_number.substr(this_number.size() - 10);
+		}
+
+		numbers.insert(this_number);
+	}
+	
+	return numbers;
 }
 
 bool Twilio::can_authenticate() {

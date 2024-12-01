@@ -58,7 +58,7 @@ var
 	PhoneNumber : string;
 	FirstName : string;
 	newmessage : string='';
-	ProgStep : real=1;
+	RealProgress : real=0;
 	counter : integer=1;
 	CounterString : string;
 	ListCountString : string;
@@ -83,7 +83,6 @@ begin
 			Exit;
 			break;
 		end;
-		ProgStep := (100 / phonelist.Count);
 		if (phonelist.Strings[i] = '') then
 		begin
 			inc(i);
@@ -101,7 +100,8 @@ begin
 		counter := i + 1;
 		CounterString := IntToStr(counter);
 		Label2.Caption := 'Sending to ' + PhoneNumber + ' (' + CounterString + ' of ' + ListCountString + ')';
-		ProgressBar1.Position := Ceil(ProgressBar1.Position + ProgStep);
+		RealProgress := (i / phonelist.Count) * 100;
+		ProgressBar1.Position := Round(RealProgress);
 		Update();
 		Application.ProcessMessages();
 

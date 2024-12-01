@@ -48,6 +48,8 @@ type
 		function GetBalance : string;
 		function CanAuthenticate() : boolean;
 		function GetSirenCorePath : string;
+		function NumberIsUnsubscribed(ToNumber : string) : boolean;
+		procedure GetUnsubscribedNumbers();
 		procedure UpdateMainScreenInfo;
 		procedure MarkNotAuthenticated;
 		procedure MarkAuthenticated;
@@ -75,6 +77,7 @@ var
 	TWBalance : string;
 	cost_per_recipient : real = 0.0079;
 	number_of_recipients : integer = 4;
+	unsubscribed_numbers : array of string;
 
 implementation
 
@@ -175,6 +178,7 @@ begin
 		begin
 			MarkAuthenticated;
 			UpdateMainScreenInfo;
+			GetUnsubscribedNumbers();
 		end;
 	end;
 
@@ -251,11 +255,54 @@ begin
 	end;
 end;
 
+procedure TForm1.GetUnsubscribedNumbers();
+var
+	OutputResult : string;
+begin
+	SetLength(unsubscribed_numbers, 0);
+	RunCommand(SirenCorePath, ['-a', TWAccountID, '-s', TWAuthToken, '-u'], OutputResult, [], swoHide);
+	OutputResult := StringReplace(OutputResult, #13#10, ',', [rfReplaceAll]);
+	OutputResult := StringReplace(OutputResult, #10, ',', [rfReplaceAll]);
+	unsubscribed_numbers := OutputResult.Split([',']);
+end;
+
+function TForm1.NumberIsUnsubscribed(ToNumber : string) : boolean;
+var
+	low, high, mid, cmp: integer;
+begin
+	low := 0;
+	high := Length(unsubscribed_numbers) - 1;
+	NumberIsUnsubscribed := false;
+
+	while low <= high do
+	begin
+		mid := (low + high) div 2;
+		cmp := CompareStr(unsubscribed_numbers[mid], ToNumber);
+
+		if cmp = 0 then
+		begin
+			NumberIsUnsubscribed := true;
+			Exit;
+		end
+		else if cmp < 0 then
+			low := mid + 1
+		else
+			high := mid - 1;
+	end;
+end;
+
 function TForm1.SendText(Message : string; ToNumber : string) : boolean;
 var
 	JunkString : string;
 begin
-
+	SendText := true;
+	// Check if the number is unsubscribed
+	if NumberIsUnsubscribed(ToNumber) then
+	begin
+		WriteLn('Number ' + ToNumber + ' is unsubscribed');
+		SendText := false;
+		Exit(false);
+	end;
 
 	// By law, automated text messages should give instructions on how to unsubscribe
 	// the #13#10 is \r\n
@@ -268,8 +315,8 @@ begin
 	end;
 
 	// RunCommand ('siren-core', send text args)
-	SendText := RunCommand(SirenCorePath, ['-a', TWAccountID, '-s', TWAuthToken, '-f', TWFromNumber, '-t', ToNumber, '-m', Message], JunkString, [], swoHide);
-
+	RunCommand(SirenCorePath, ['-a', TWAccountID, '-s', TWAuthToken, '-f', TWFromNumber, '-t', ToNumber, '-m', Message], JunkString, [], swoHide);
+	SendText := true;
 end;
 
 procedure TForm1.MenuItem8Click(Sender: TObject);

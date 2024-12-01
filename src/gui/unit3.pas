@@ -122,13 +122,19 @@ begin
 
 		//WriteLn(newmessage);
 
-		Form1.SendText(newmessage, PhoneNumber);
+		// If SendText returns false, then the message was not sent
+		// If SendText returns true, then the message was sent
+		// If the message was not sent, then we don't need to wait 7 seconds
+
+		if (Form1.SendText(newmessage, PhoneNumber)) and (i < phonelist.Count - 1) then
+		begin
+			Sleep(7000); // Sleep 7 seconds to avoid getting carrier-filtered for sending too many messages via longcodes
+			// It is strongly recommended that this value is not changed, otherwise people may not receive your messages
+		end;
 
 		// Free up memory
 		NumberAndName.Free;
 		inc(i);
-		Sleep(7000); // Sleep 7 seconds to avoid getting carrier-filtered for sending too many messages via longcodes
-		// It is strongly recommended that this value is not changed, otherwise people may not receive your messages
 	end;
 
 	ProgressBar1.Position := 100;

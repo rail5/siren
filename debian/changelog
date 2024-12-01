@@ -1,3 +1,13 @@
+siren (0.11) unstable; urgency=medium
+
+  * Added help menu item to view unsubscribed and invalid numbers 
+  * Fixed that old bug with the progress bar filling up early
+  * Refuse to try sending to unsubscribed numbers
+  * siren-core: Added -u option to get list of unsubscribed/invalid
+    numbers
+
+ -- rail5 <andrew@rail5.org>  Sun, 01 Dec 2024 18:04:46 +0800
+
 siren (0.10) unstable; urgency=medium
 
   * Removed ancient debugging message that gave a spooky error to

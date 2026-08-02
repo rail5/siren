@@ -129,10 +129,23 @@ TwilioResult Twilio::sendMessage(
 		response.setError("Failed to escape message body for URL encoding.");
 		return response;
 	}
+
+	char* escaped_picture_url = nullptr;
+	if (!picture_url.empty()) {
+		escaped_picture_url = curl_easy_escape(curl, picture_url.c_str(), 0);
+		if (!escaped_picture_url) {
+			curl_easy_cleanup(curl);
+			curl_free(escaped_message_body);
+			TwilioResult response;
+			response.setError("Failed to escape picture URL for URL encoding.");
+			return response;
+		}
+	}
+
 	curl_easy_cleanup(curl);
 
 	std::string post_data = "To=" + normalized_to_number + "&From=" + from_number + "&Body=" + escaped_message_body;
-	if (!picture_url.empty()) post_data += "&MediaUrl=" + picture_url;
+	if (escaped_picture_url != nullptr) post_data += "&MediaUrl=" + std::string(escaped_picture_url);
 
 	auto response = getWebConnector().sendPOSTRequest(
 		"https://api.twilio.com/2010-04-01/Accounts/" + account_sid + "/Messages.json",
@@ -142,8 +155,11 @@ TwilioResult Twilio::sendMessage(
 	);
 
 	curl_free(escaped_message_body);
+	if (escaped_picture_url != nullptr) curl_free(escaped_picture_url);
 
-	return response;
+	// "Slicing object from WebResult to OperationResult discards xx bytes of state"
+	// Yes, but those bytes (the derived class's members) are not needed by the caller.
+	return response; // NOLINT(cppcoreguidelines-slicing)
 }
 
 } // namespace Siren::Twilio

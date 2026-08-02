@@ -47,7 +47,10 @@ std::size_t _stream_write(char* ptr, std::size_t size, std::size_t nmemb, void* 
 
 } // anonymous namespace
 
-WebResult WebConnector::sendGETRequest(
+// The following two functions should NOT be marked as static,
+// because that would bypass the WebConnector singleton,
+// whose constructor and destructor need to be called to initialize and cleanup libcurl.
+WebResult WebConnector::sendGETRequest( // NOLINT(readability-convert-member-functions-to-static)
 	const std::string& url,
 	const std::optional<std::string>& username,
 	const std::optional<std::string>& password
@@ -97,7 +100,7 @@ WebResult WebConnector::sendGETRequest(
 	return response;
 }
 
-WebResult WebConnector::sendPOSTRequest(
+WebResult WebConnector::sendPOSTRequest( // NOLINT(readability-convert-member-functions-to-static)
 	const std::string& url,
 	const std::string& post_data,
 	const std::optional<std::string>& username,

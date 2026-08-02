@@ -16,4 +16,7 @@ public:
 	}
 };
 
+// No point to linting the expansion of a macro we can't control
+// NOLINTBEGIN
 wxIMPLEMENT_APP(SirenApp);
+// NOLINTEND

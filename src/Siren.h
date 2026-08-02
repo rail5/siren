@@ -63,6 +63,10 @@ inline std::filesystem::path getHomeDirectory() {
 		return homeDir;
 	#else
 		// Unix-like systems (Linux, macOS, etc.)
+
+		// The "thread-unsafe" warning regarding std::getenv is a false positive
+		// (It's only "thread-unsafe" if we're *modifying* the environment variable. This is just a read.)
+		//NOLINTNEXTLINE(concurrency-mt-unsafe)
 		if (const char* home = std::getenv("HOME")) {
 			return {home};
 		}

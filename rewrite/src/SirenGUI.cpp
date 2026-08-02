@@ -10,6 +10,7 @@
 #include "SirenGUI.h"
 
 #include <wx/msgdlg.h>
+#include <wx/utils.h>
 
 #include <memory>
 
@@ -153,21 +154,21 @@ MainWindow::MainWindow(
 	MessageboxLabel->Wrap(-1);
 	MessageSizer->Add(MessageboxLabel, 0, wxALIGN_LEFT|wxLEFT, 5);
 
-	m_textCtrl2 = new wxTextCtrl(
+	MessageBox = new wxTextCtrl(
 		this,
 		wxID_ANY,
 		_("Hello {name}!"),
 		wxDefaultPosition,
 		wxDefaultSize,
 		wxTE_MULTILINE);
-	m_textCtrl2->SetMinSize(wxSize(350,250));
+	MessageBox->SetMinSize(wxSize(350,250));
 
-	MessageSizer->Add(m_textCtrl2, 0, wxALL|wxEXPAND, 5);
+	MessageSizer->Add(MessageBox, 0, wxALL|wxEXPAND, 5);
 
 	CostPerMessageLabel = new wxStaticText(
 		this,
 		wxID_ANY,
-		_("Cost per recipient: $0.0079 (approx)"),
+		_("Cost per recipient: $0.0083 (approx)"),
 		wxDefaultPosition,
 		wxDefaultSize,
 		0);
@@ -202,7 +203,7 @@ MainWindow::MainWindow(
 	TotalCostLabel = new wxStaticText(
 		this,
 		wxID_ANY,
-		_("Total cost: $0.0316 (approx)"),
+		_("Total cost: $0.0332 (approx)"),
 		wxDefaultPosition,
 		wxDefaultSize,
 		0);

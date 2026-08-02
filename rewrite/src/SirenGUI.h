@@ -24,31 +24,15 @@
 #include <wx/frame.h>
 #include <wx/dialog.h>
 
+#include "Siren.h"
+
 #include <cstdint>
 
 namespace Siren::GUI {
 
-using TenThousandthOfADollar = std::uint64_t;
-
-inline std::string formatCost(TenThousandthOfADollar cost) {
-	std::uint64_t dollars = cost / 10000;
-	std::uint64_t cents = (cost % 10000) / 100;
-	std::uint64_t tenThousandths = cost % 100;
-	
-	std::string result = std::to_string(dollars) + ".";
-
-	if (cents < 10) result += "0";
-	result += std::to_string(cents);
-
-	if (tenThousandths < 10) result += "0";
-	result += std::to_string(tenThousandths);
-
-	return result;
-}
-
 class MainWindow : public wxFrame {
 	private:
-		TenThousandthOfADollar costPerRecipient = 79; // $0.0079 per recipient (initially, longer messages cost more)
+		TenThousandthOfADollar costPerRecipient = 83; // $0.0083 per recipient (initially, longer messages cost more)
 		std::uint64_t totalRecipients = 4; // 4 recipients (initially, in the example text box)
 
 		TenThousandthOfADollar calculateTotalCost() const { return costPerRecipient * totalRecipients; }
@@ -59,7 +43,7 @@ class MainWindow : public wxFrame {
 		wxStaticText* SignedInLabel;
 		wxStaticText* AccountBalanceLabel;
 		wxStaticText* MessageboxLabel;
-		wxTextCtrl* m_textCtrl2;
+		wxTextCtrl* MessageBox;
 		wxStaticText* CostPerMessageLabel;
 		wxStaticText* PhoneNumbersLabel;
 		wxTextCtrl* PhoneNumbersInputBox;

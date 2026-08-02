@@ -75,7 +75,7 @@ inline std::filesystem::path getHomeDirectory() {
 
 		throw std::runtime_error("Failed to get home directory on Unix-like system.");
 	#endif
-			
+
 }
 
 } // namespace Siren

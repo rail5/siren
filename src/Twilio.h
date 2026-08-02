@@ -31,7 +31,7 @@ class Twilio final {
 		std::string from_number;
 
 		// JSON config file format:
-		
+
 		/**
 		 * @brief Parses a JSON configuration file to load Twilio settings.
 		 * 

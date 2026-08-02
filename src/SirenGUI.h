@@ -95,15 +95,6 @@ class MainWindow : public wxFrame {
 						return ready.load();
 					});
 				}
-
-				/**
-				 * @brief Checks if the list of unsubscribed numbers is ready to be read.
-				 * 
-				 * @return true if the list is ready, false otherwise.
-				 */
-				bool isReady() const {
-					return ready.load();
-				}
 		} unsubscribedNumbersList;
 	protected:
 		wxMenuBar* MainMenuBar;
@@ -165,7 +156,6 @@ class MainWindow : public wxFrame {
 		 */
 		void loadUnsubscribedNumbersAsync();
 
-		bool unsubscribedNumbersReady() const { return unsubscribedNumbersList.isReady(); }
 		void waitForUnsubscribedNumbers() { unsubscribedNumbersList.waitUntilReady(); }
 		std::set<std::string> getUnsubscribedNumbers() { return unsubscribedNumbersList.getNumbers(); }
 };

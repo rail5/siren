@@ -507,7 +507,7 @@ TwilioAccountSettingsWindow::TwilioAccountSettingsWindow(
 		twilio.setAuthToken(AuthTokenInputBox->GetValue().ToStdString());
 		twilio.setFromNumber(FromNumberInputBox->GetValue().ToStdString());
 		// First: can we even connect to the Twilio API?
-		if (!twilio.canConnect()) {
+		if (!Twilio::Twilio::canConnect()) {
 			wxMessageBox(
 				_("Could not connect to the Twilio API. Please check your internet connection."),
 				_("Connection Error"),

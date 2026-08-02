@@ -137,7 +137,7 @@ TenThousandthOfADollar Twilio::getMessageCost(const std::u8string& message_body)
 	// Siren adds a line break and the text "(stop=quit)" to the end of every message
 
 	const std::u8string unsubscribe_instructions = u8"\n(stop=quit)";
-	
+
 	const auto full_message_length = utf8_characters.size() + unsubscribe_instructions.size();
 
 	if (full_message_length <= 160) return 83;

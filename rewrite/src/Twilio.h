@@ -11,6 +11,7 @@
 #include <vector>
 #include <string_view>
 #include <utility>
+#include <filesystem>
 
 #include "Siren.h"
 #include "OperationResult.h"
@@ -25,16 +26,32 @@ class Twilio final {
 		std::string auth_token;
 		std::string from_number;
 
+		// JSON config file format
+		bool parseConfigFile(const std::filesystem::path& config_file_path);
+
+		// XML config file format (was used by the old Pascal version of Siren, but is no longer used)
+		// Nevertheless, we still support it for backwards compatibility with old config files,
+		// so that when users upgrade they don't need to re-enter their Twilio credentials.
+		// But we'll immediately transition them to the new format after loading.
+		bool parseOldStyleConfigFile(const std::filesystem::path& config_file_path);
 	public:
-		Twilio(const std::string& account_sid, const std::string& auth_token, const std::string& from_number)
-			: account_sid(account_sid), auth_token(auth_token), from_number(normalizePhoneNumber(from_number)) {}
-		Twilio() = delete;
+		Twilio() = default;
 		~Twilio() = default;
 
 		Twilio(const Twilio&) = delete;
 		Twilio& operator=(const Twilio&) = delete;
 		Twilio(Twilio&&) = delete;
 		Twilio& operator=(Twilio&&) = delete;
+
+		bool loadSettingsFromConfigFile(const std::filesystem::path& config_file_path);
+		void saveConfigFile(const std::filesystem::path& config_file_path) const;
+
+		void setAccountSID(const std::string& account_sid_in) { account_sid = account_sid_in; }
+		void setAuthToken(const std::string& auth_token_in) { auth_token = auth_token_in; }
+		void setFromNumber(const std::string& from_number_in) { from_number = normalizePhoneNumber(from_number_in); }
+		const std::string& getAccountSID() const { return account_sid; }
+		const std::string& getAuthToken() const { return auth_token; }
+		const std::string& getFromNumber() const { return from_number; }
 
 		TwilioResult sendMessage(
 			const std::string& to_number,

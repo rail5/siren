@@ -25,6 +25,7 @@
 #include <wx/dialog.h>
 
 #include "Siren.h"
+#include "Twilio.h"
 
 #include <cstdint>
 
@@ -36,6 +37,8 @@ class MainWindow : public wxFrame {
 		std::uint64_t totalRecipients = 4; // 4 recipients (initially, in the example text box)
 
 		TenThousandthOfADollar calculateTotalCost() const { return costPerRecipient * totalRecipients; }
+
+		Twilio::Twilio twilioClient;
 	protected:
 		wxMenuBar* MainMenuBar;
 		wxMenu* SettingsMenu;
@@ -72,6 +75,8 @@ class MainWindow : public wxFrame {
 			CostPerMessageLabel->SetLabel(_("Cost per recipient: $") + formatCost(costPerRecipient) + _(" (approx)"));
 			TotalCostLabel->SetLabel(_("Total cost: $") + formatCost(calculateTotalCost()) + _(" (approx)"));
 		}
+
+		Twilio::Twilio& getTwilioClient() { return twilioClient; }
 };
 
 class TwilioAccountSettingsWindow : public wxDialog {
@@ -88,7 +93,7 @@ class TwilioAccountSettingsWindow : public wxDialog {
 	public:
 		TwilioAccountSettingsWindow(wxWindow* parent,
 			wxWindowID id = wxID_ANY,
-			const wxString& title = ("Siren - Twilio Account"),
+			const wxString& title = _("Siren - Twilio Account"),
 			const wxPoint& pos = wxDefaultPosition,
 			const wxSize& size = wxSize(345, 309),
 			std::int64_t style = wxDEFAULT_DIALOG_STYLE|wxTAB_TRAVERSAL);
@@ -108,7 +113,7 @@ class UnsubscribedNumbersWindow : public wxDialog {
 	public:
 		UnsubscribedNumbersWindow(wxWindow* parent,
 			wxWindowID id = wxID_ANY,
-			const wxString& title = ("Siren - Unsubscribed / Invalid Numbers"),
+			const wxString& title = _("Siren - Unsubscribed / Invalid Numbers"),
 			const wxPoint& pos = wxDefaultPosition,
 			const wxSize& size = wxSize(500, 332),
 			std::int64_t style = wxDEFAULT_DIALOG_STYLE|wxTAB_TRAVERSAL);

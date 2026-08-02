@@ -159,7 +159,7 @@ MainWindow::MainWindow(
 	MessageBox = new wxTextCtrl(
 		this,
 		wxID_ANY,
-		_("Hello {name}!"),
+		_("Hello $name!"),
 		wxDefaultPosition,
 		wxDefaultSize,
 		wxTE_MULTILINE);
@@ -240,10 +240,12 @@ MainWindow::MainWindow(
 
 	VerticalSizer->Add(MainContentSizer, 1, wxEXPAND, 5);
 
-	auto* SendButtonSizer = new wxBoxSizer(wxVERTICAL);
+	auto* SendButtonSizer = new wxBoxSizer(wxHORIZONTAL);
 
 	SendButton = new wxButton(this, wxID_ANY, _("Send messages"), wxDefaultPosition, wxDefaultSize, 0);
+	SendButtonSizer->AddStretchSpacer(1);
 	SendButtonSizer->Add(SendButton, 0, wxALL, 5);
+	SendButtonSizer->AddStretchSpacer(1);
 
 
 	VerticalSizer->Add(SendButtonSizer, 1, wxEXPAND, 5);
@@ -253,6 +255,32 @@ MainWindow::MainWindow(
 	this->Layout();
 
 	this->Centre(wxBOTH);
+
+	// Attempt to load Twilio settings from the config file
+	std::filesystem::path config_file_path = Siren::getHomeDirectory() / ".siren-config";
+	// Check if the config file exists before attempting to load it
+	// If not, try to load from the old-style XML config file (~/.siren-config.xml)
+	if (!std::filesystem::exists(config_file_path)) config_file_path = Siren::getHomeDirectory() / "siren-config.xml";
+
+	if (twilioClient.loadSettingsFromConfigFile(config_file_path)) {
+		// If the settings were successfully loaded, check if we can authenticate with Twilio
+		if (!twilioClient.canAuthenticate()) {
+			wxMessageBox(
+				_("Could not authenticate with the Twilio API. Please check your Account ID and Auth Token."),
+				_("Authentication Error"),
+				wxOK | wxICON_ERROR,
+				this);
+		} else if (!twilioClient.fromNumberIsValid()) {
+			wxMessageBox(
+				_("The provided \"From\" phone number is not valid for this Twilio account. Please check the number and ensure it is associated with your Twilio account."),
+				_("Invalid From Number"),
+				wxOK | wxICON_ERROR,
+				this);
+		} else {
+			SignedInLabel->SetLabel(_("Signed in to Twilio"));
+			AccountBalanceLabel->SetLabel(_("Balance: $") + formatCost(std::stoull(twilioClient.getAccountBalance())));
+		}
+	}
 }
 
 TwilioAccountSettingsWindow::TwilioAccountSettingsWindow(
@@ -326,12 +354,101 @@ TwilioAccountSettingsWindow::TwilioAccountSettingsWindow(
 		0);
 	SettingsStackSizer->Add(FromNumberInputBox, 0, wxALL|wxEXPAND, 5);
 
+	// Default-fill the input boxes with the current Twilio settings from the parent window
+	auto* parent_window = dynamic_cast<MainWindow*>(GetParent());
+	if (parent_window) {
+		Twilio::Twilio& twilio = parent_window->getTwilioClient();
+		AccountIDInputBox->SetValue(twilio.getAccountSID());
+		AuthTokenInputBox->SetValue(twilio.getAuthToken());
+		FromNumberInputBox->SetValue(twilio.getFromNumber());
+	}
+
 	CheckSettingsButton = new wxButton(this, wxID_ANY, _("Check settings"), wxDefaultPosition, wxDefaultSize, 0);
 	SettingsStackSizer->Add(CheckSettingsButton, 0, wxALL|wxEXPAND, 5);
+
+	// Callback for when the "Check settings" button is clicked:
+	// 1. Get the account ID, auth token, and from number from the input
+	// 2. Create a Twilio object with those settings
+	// 3. Call Twilio::canAuthenticate() to check if the settings are valid
+	// 4. Call Twilio::fromNumberIsValid() to check if the from number is valid
+	// 5. Display a message box with the results
+	CheckSettingsButton->Bind(wxEVT_BUTTON, [this](wxCommandEvent& /*event*/) {
+		// The parent window should hold the Twilio object, so we can just use that instead of creating a new one
+		auto* parent_window = dynamic_cast<MainWindow*>(GetParent());
+		if (!parent_window) {
+			wxMessageBox(
+				_("Could not access parent window."),
+				_("Error"),
+				wxOK | wxICON_ERROR,
+				this);
+			return;
+		}
+		Twilio::Twilio& twilio = parent_window->getTwilioClient();
+		twilio.setAccountSID(AccountIDInputBox->GetValue().ToStdString());
+		twilio.setAuthToken(AuthTokenInputBox->GetValue().ToStdString());
+		twilio.setFromNumber(FromNumberInputBox->GetValue().ToStdString());
+		// First: can we even connect to the Twilio API?
+		if (!twilio.canConnect()) {
+			wxMessageBox(
+				_("Could not connect to the Twilio API. Please check your internet connection."),
+				_("Connection Error"),
+				wxOK | wxICON_ERROR,
+				this);
+			return;
+		}
+		// Second: can we authenticate with the provided credentials?
+		if (!twilio.canAuthenticate()) {
+			wxMessageBox(
+				_("Could not authenticate with the Twilio API. Please check your Account ID and Auth Token."),
+				_("Authentication Error"),
+				wxOK | wxICON_ERROR,
+				this);
+			return;
+		}
+		// Third: is the from number valid for this account?
+		if (!twilio.fromNumberIsValid()) {
+			wxMessageBox(
+				_("The provided \"From\" phone number is not valid for this Twilio account. Please check the number and ensure it is associated with your Twilio account."),
+				_("Invalid From Number"),
+				wxOK | wxICON_ERROR,
+				this);
+			return;
+		}
+		// If we got here, everything is valid
+		wxMessageBox(
+			_("The provided Twilio settings are valid!"),
+			_("Settings Valid"),
+			wxOK | wxICON_INFORMATION,
+			this);
+	});
 
 	SaveSettingsButton = new wxButton(this, wxID_ANY, _("Save settings"), wxDefaultPosition, wxDefaultSize, 0);
 	SettingsStackSizer->Add(SaveSettingsButton, 0, wxALL|wxEXPAND, 5);
 
+	// Callback for when the "Save settings" button is clicked:
+	// 1. Get the account ID, auth token, and from number from the input
+	// 2. Create a Twilio object with those settings
+	// 3. Call Twilio::saveConfigFile() to save the settings to ~/.siren-config
+	SaveSettingsButton->Bind(wxEVT_BUTTON, [this](wxCommandEvent& /*event*/) {
+		auto* parent_window = dynamic_cast<MainWindow*>(GetParent());
+		if (!parent_window) {
+			wxMessageBox(
+				_("Could not access parent window."),
+				_("Error"),
+				wxOK | wxICON_ERROR,
+				this);
+			return;
+		}
+		Twilio::Twilio& twilio = parent_window->getTwilioClient();
+		twilio.setAccountSID(AccountIDInputBox->GetValue().ToStdString());
+		twilio.setAuthToken(AuthTokenInputBox->GetValue().ToStdString());
+		twilio.setFromNumber(FromNumberInputBox->GetValue().ToStdString());
+		std::filesystem::path config_file_path = Siren::getHomeDirectory() / ".siren-config";
+		twilio.saveConfigFile(config_file_path);
+
+		// Close the dialog after saving settings
+		this->Close();
+	});
 
 	this->SetSizer(SettingsStackSizer);
 	this->Layout();

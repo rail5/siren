@@ -2,9 +2,10 @@
 
 Siren is a cross-platform *Twilio* frontend designed to make **mass text message campaigns** cheaper & more accessible for **non-profit organizations** and clubs.
 
-> Then he told of cunning Circe and her craft, and how he sailed to the chill house of Hades, to consult the ghost of the Theban prophet Teiresias, and how he saw his old comrades in arms, and his mother who bore him and brought him up when he was a child; how he then heard the wondrous singing of the Sirens, and went on to the wandering rocks and terrible Charybdis and to Scylla, whom no man had ever yet passed in safety
+> No one else has ever sailed past this place in his black ship until he has listened to the honey-sweet voice that issues from our lips;
+> then goes on, well-pleased, knowing more than he ever did.
 
-– The Odyssey, Book XXIII
+– *The Odyssey*, Book 12
 
 ## About
 

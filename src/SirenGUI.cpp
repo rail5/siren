@@ -297,9 +297,7 @@ MainWindow::MainWindow(
 void MainWindow::loadTwilioSettingsAsync(std::filesystem::path config_file_path) {
 	wxWeakRef<MainWindow> weak_self(this);
 	std::thread([weak_self, config_file_path]() mutable {
-		Twilio::Twilio startup_twilio;
-
-		if (!startup_twilio.loadSettingsFromConfigFile(config_file_path)) {
+		if (!weak_self->twilioClient.loadSettingsFromConfigFile(config_file_path)) {
 			if (weak_self) weak_self->CallAfter([weak_self]() {
 				if (!weak_self) return;
 				weak_self->SignedInLabel->SetLabel(_("You are not signed in"));
@@ -320,14 +318,14 @@ void MainWindow::loadTwilioSettingsAsync(std::filesystem::path config_file_path)
 			weak_self->Layout();
 		});
 
-		const std::string account_sid = startup_twilio.getAccountSID();
-		const std::string auth_token = startup_twilio.getAuthToken();
-		const std::string from_number = startup_twilio.getFromNumber();
+		const std::string& account_sid = weak_self->twilioClient.getAccountSID();
+		const std::string& auth_token = weak_self->twilioClient.getAuthToken();
+		const std::string& from_number = weak_self->twilioClient.getFromNumber();
 
-		const bool can_authenticate = startup_twilio.canAuthenticate();
-		const bool from_number_is_valid = can_authenticate && startup_twilio.fromNumberIsValid();
+		const bool can_authenticate = weak_self->twilioClient.canAuthenticate();
+		const bool from_number_is_valid = can_authenticate && weak_self->twilioClient.fromNumberIsValid();
 		const std::string account_balance = (can_authenticate && from_number_is_valid)
-			? startup_twilio.getAccountBalance()
+			? weak_self->twilioClient.getAccountBalance()
 			: "0";
 
 		if (weak_self) weak_self->CallAfter([
@@ -340,10 +338,6 @@ void MainWindow::loadTwilioSettingsAsync(std::filesystem::path config_file_path)
 			account_balance
 		]() {
 			if (!weak_self) return;
-
-			weak_self->twilioClient.setAccountSID(account_sid);
-			weak_self->twilioClient.setAuthToken(auth_token);
-			weak_self->twilioClient.setFromNumber(from_number);
 
 			if (!can_authenticate) {
 				wxMessageBox(

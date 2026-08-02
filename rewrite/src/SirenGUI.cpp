@@ -294,7 +294,7 @@ MainWindow::MainWindow(
 				this);
 		} else {
 			SignedInLabel->SetLabel(_("Signed in to Twilio"));
-			AccountBalanceLabel->SetLabel(_("Balance: $") + formatCost(std::stoull(twilioClient.getAccountBalance())));
+			AccountBalanceLabel->SetLabel(_("Balance: $") + twilioClient.getAccountBalance());
 		}
 	}
 }

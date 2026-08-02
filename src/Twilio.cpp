@@ -166,10 +166,10 @@ bool Twilio::fromNumberIsValid() {
 		nlohmann::json data = nlohmann::json::parse(response.getResponseBody());
 		if (!data.contains("incoming_phone_numbers")) return false;
 		for (const auto& number : data["incoming_phone_numbers"]) {
-			if (!number.contains("phone_number")) continue;
+			if (!number.contains("phone_number") || number["phone_number"].is_null() || !number["phone_number"].is_string()) continue;
 			if (normalizePhoneNumber(number["phone_number"].get<std::string>()) == normalizePhoneNumber(from_number)) return true;
 		}
-	} catch (const nlohmann::json::parse_error&) {
+	} catch (const nlohmann::json::exception&) {
 		return false;
 	}
 	return false;
@@ -184,9 +184,12 @@ std::string Twilio::getAccountBalance() {
 	if (!response.success()) return "0";
 	try {
 		nlohmann::json data = nlohmann::json::parse(response.getResponseBody());
-		if (!data.contains("balance")) return "0";
-		return data["balance"];
-	} catch (const nlohmann::json::parse_error&) {
+		if (!data.contains("balance") || data["balance"].is_null()) return "0";
+		if (data["balance"].is_string()) return data["balance"].get<std::string>();
+		if (data["balance"].is_number_float()) return std::to_string(data["balance"].get<double>());
+		if (data["balance"].is_number_integer()) return std::to_string(data["balance"].get<std::int64_t>());
+		return "0";
+	} catch (const nlohmann::json::exception&) {
 		return "0";
 	}
 }
@@ -216,17 +219,17 @@ std::set<std::string> Twilio::getUnsubscribedNumbers() {
 			if (!data.contains("messages")) break;
 
 			for (auto& number : data["messages"]) {
-				if (!number.contains("error_code")) continue;
-				int error_code = number["error_code"];
+				if (!number.contains("error_code") || number["error_code"].is_null() || !number["error_code"].is_number_integer()) continue;
+				int error_code = number["error_code"].get<int>();
 				if (error_code == 21610 || error_code == 30006 || error_code == 21211) {
-					if (number.contains("to")) {
+					if (number.contains("to") && !number["to"].is_null() && number["to"].is_string()) {
 						numbers.insert(normalizePhoneNumber(number["to"].get<std::string>()));
 					}
 				}
 			}
 
 			next_page_uri = data.value("next_page_uri", "");
-		} catch (const nlohmann::json::parse_error&) {
+		} catch (const nlohmann::json::exception&) {
 			break;
 		}
 	}

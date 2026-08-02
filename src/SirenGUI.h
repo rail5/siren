@@ -28,6 +28,11 @@
 #include "Twilio.h"
 
 #include <cstdint>
+#include <condition_variable>
+#include <set>
+#include <string>
+#include <atomic>
+#include <mutex>
 
 namespace Siren::GUI {
 
@@ -39,6 +44,37 @@ class MainWindow : public wxFrame {
 		TenThousandthOfADollar calculateTotalCost() const { return costPerRecipient * totalRecipients; }
 
 		Twilio::Twilio twilioClient;
+
+		class UnsubscribedNumbersList {
+			private:
+				std::set<std::string> numbers;
+				std::atomic<bool> ready{false};
+				std::mutex mutex;
+				std::condition_variable condition_variable;
+			public:
+				void setNumbers(const std::set<std::string>& new_numbers) {
+					std::lock_guard<std::mutex> lock(mutex);
+					numbers = new_numbers;
+					ready = true;
+					condition_variable.notify_all();
+				}
+
+				std::set<std::string> getNumbers() {
+					std::lock_guard<std::mutex> lock(mutex);
+					return numbers;
+				}
+
+				void waitUntilReady() {
+					std::unique_lock<std::mutex> lock(mutex);
+					condition_variable.wait(lock, [this]() {
+						return ready.load();
+					});
+				}
+
+				bool isReady() const {
+					return ready.load();
+				}
+		} unsubscribedNumbersList;
 	protected:
 		wxMenuBar* MainMenuBar;
 		wxMenu* SettingsMenu;
@@ -82,6 +118,11 @@ class MainWindow : public wxFrame {
 		Twilio::Twilio& getTwilioClient() { return twilioClient; }
 
 		void loadTwilioSettingsAsync(std::filesystem::path config_file_path);
+		void loadUnsubscribedNumbersAsync();
+
+		bool unsubscribedNumbersReady() const { return unsubscribedNumbersList.isReady(); }
+		void waitForUnsubscribedNumbers() { unsubscribedNumbersList.waitUntilReady(); }
+		std::set<std::string> getUnsubscribedNumbers() { return unsubscribedNumbersList.getNumbers(); }
 };
 
 class TwilioAccountSettingsWindow : public wxDialog {

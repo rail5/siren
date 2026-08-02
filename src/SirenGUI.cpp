@@ -17,6 +17,7 @@
 
 #include <memory>
 #include <thread>
+#include <algorithm>
 
 namespace Siren::GUI {
 
@@ -372,9 +373,36 @@ void MainWindow::loadTwilioSettingsAsync(std::filesystem::path config_file_path)
 			weak_self->SignedInLabel->Wrap(-1);
 			weak_self->AccountBalanceLabel->Wrap(-1);
 			weak_self->Layout();
+
+			// Once we're signed in, we can also load the unsubscribed numbers in the background.
+			weak_self->loadUnsubscribedNumbersAsync();
 		});
 	}).detach();
 }
+
+void MainWindow::loadUnsubscribedNumbersAsync() {
+	wxWeakRef<MainWindow> weak_self(this);
+	const std::string account_sid = twilioClient.getAccountSID();
+	const std::string auth_token = twilioClient.getAuthToken();
+	std::thread([weak_self, account_sid, auth_token]() mutable {
+		if (!weak_self) return;
+
+		std::set<std::string> unsubscribed_numbers;
+		try {
+			Twilio::Twilio twilio;
+			twilio.setAccountSID(account_sid);
+			twilio.setAuthToken(auth_token);
+			unsubscribed_numbers = twilio.getUnsubscribedNumbers();
+		} catch (const std::exception&) {
+			unsubscribed_numbers.clear();
+		}
+		if (weak_self) weak_self->CallAfter([weak_self, unsubscribed_numbers]() {
+			if (!weak_self) return;
+			weak_self->unsubscribedNumbersList.setNumbers(unsubscribed_numbers);
+		});
+	}).detach();
+}
+
 TwilioAccountSettingsWindow::TwilioAccountSettingsWindow(
 	wxWindow* parent,
 	wxWindowID id,
@@ -456,7 +484,7 @@ TwilioAccountSettingsWindow::TwilioAccountSettingsWindow(
 	}
 
 	CheckSettingsButton = new wxButton(this, wxID_ANY, _("Check settings"), wxDefaultPosition, wxDefaultSize, 0);
-	SettingsStackSizer->Add(CheckSettingsButton, 0, wxALL|wxEXPAND, 5);
+	const auto unsubscribed_numbers = parent_window->getUnsubscribedNumbers();
 
 	// Callback for when the "Check settings" button is clicked:
 	// 1. Get the account ID, auth token, and from number from the input
@@ -575,6 +603,30 @@ UnsubscribedNumbersWindow::UnsubscribedNumbersWindow(
 
 	Container->Add(UnsubscribedNumbersTextbox, 0, wxALL|wxEXPAND, 5);
 
+	// Wait for the unsubscribed numbers to be ready, then populate the textbox
+	// Until then, at least inform the user that the list is loading
+	UnsubscribedNumbersTextbox->SetValue(_("Loading unsubscribed numbers..."));
+	wxWeakRef<UnsubscribedNumbersWindow> weak_self(this);
+	std::thread([this, weak_self]() {
+		if (!weak_self) return;
+		auto* parent_window = dynamic_cast<MainWindow*>(weak_self->GetParent());
+		if (!parent_window) return;
+
+		parent_window->waitForUnsubscribedNumbers();
+		if (weak_self) weak_self->CallAfter([this, weak_self, parent_window]() {
+			if (!weak_self) return;
+			const auto unsubscribed_numbers = parent_window->getUnsubscribedNumbers();
+			if (unsubscribed_numbers.empty()) {
+				UnsubscribedNumbersTextbox->SetValue(_("No unsubscribed numbers found."));
+			} else {
+				std::string unsubscribed_numbers_text;
+				for (const auto& number : unsubscribed_numbers) {
+					unsubscribed_numbers_text += number + "\n";
+				}
+				UnsubscribedNumbersTextbox->SetValue(unsubscribed_numbers_text);
+			}
+		});
+	}).detach();
 
 	this->SetSizer(Container);
 	this->Layout();

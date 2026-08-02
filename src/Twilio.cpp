@@ -133,9 +133,16 @@ TenThousandthOfADollar Twilio::getMessageCost(const std::u8string& message_body)
 
 	const auto utf8_characters = extractUTF8Characters(message_body);
 
-	if (utf8_characters.size() <= 160) return 83;
+	// BY LAW, we MUST append unsubscribe instructions to the end of every message, so we must account for that in the cost calculation
+	// Siren adds a line break and the text "(stop=quit)" to the end of every message
 
-	const std::size_t number_of_segments = (utf8_characters.size() + 152) / 153; // Round up to the nearest segment
+	const std::u8string unsubscribe_instructions = u8"\n(stop=quit)";
+	
+	const auto full_message_length = utf8_characters.size() + unsubscribe_instructions.size();
+
+	if (full_message_length <= 160) return 83;
+
+	const std::size_t number_of_segments = (full_message_length + 152) / 153; // Round up to the nearest segment
 	return static_cast<TenThousandthOfADollar>(number_of_segments * 83);
 }
 
@@ -205,6 +212,10 @@ std::set<std::string> Twilio::getUnsubscribedNumbers() {
 	// Then we'll count it and return it in this set
 	//
 	// Note: this function should be run ASYNCHRONOUSLY, as it may take a while to complete if there are many messages to process.
+	//
+	// Unfortunately, Twilio does not provide a direct API to get the list of unsubscribed numbers,
+	// so we have to infer it from the failed messages.
+	// It would be MUCH faster if we could just get the list directly. I have no idea why Twilio doesn't provide this.
 	std::set<std::string> numbers;
 	std::string next_page_uri = "/2010-04-01/Accounts/" + account_sid + "/Messages.json?Status=failed&PageSize=5000";
 	while (!next_page_uri.empty()) {

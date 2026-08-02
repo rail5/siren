@@ -36,6 +36,10 @@
 
 namespace Siren::GUI {
 
+/**
+ * @brief The main window of the application, providing the user interface for sending messages via Twilio.
+ * 
+ */
 class MainWindow : public wxFrame {
 	private:
 		TenThousandthOfADollar costPerRecipient = 83; // $0.0083 per recipient (initially, longer messages cost more)
@@ -45,6 +49,13 @@ class MainWindow : public wxFrame {
 
 		Twilio::Twilio twilioClient;
 
+		/**
+		 * @brief A list of unsubscribed phone numbers.
+		 *
+		 * The list is thread-safe and can be accessed from multiple threads.
+		 * It uses a condition variable to allow threads to wait until the list is ready.
+		 * It is populated asynchronously when the application starts, and can be accessed via the getUnsubscribedNumbers() method.
+		 */
 		class UnsubscribedNumbersList {
 			private:
 				std::set<std::string> numbers;
@@ -52,6 +63,11 @@ class MainWindow : public wxFrame {
 				std::mutex mutex;
 				std::condition_variable condition_variable;
 			public:
+				/**
+				 * @brief Sets the list of unsubscribed numbers and notifies any waiting threads that the list is ready.
+				 * 
+				 * @param new_numbers The new set of unsubscribed numbers.
+				 */
 				void setNumbers(const std::set<std::string>& new_numbers) {
 					std::lock_guard<std::mutex> lock(mutex);
 					numbers = new_numbers;
@@ -59,11 +75,20 @@ class MainWindow : public wxFrame {
 					condition_variable.notify_all();
 				}
 
+				/**
+				 * @brief Get the list of unsubscribed numbers. This method is thread-safe.
+				 * 
+				 * @return std::set<std::string> The set of unsubscribed numbers.
+				 */
 				std::set<std::string> getNumbers() {
 					std::lock_guard<std::mutex> lock(mutex);
 					return numbers;
 				}
 
+				/**
+				 * @brief Waits until the list of unsubscribed numbers is ready.
+				 * This method blocks the calling thread until the list is ready.
+				 */
 				void waitUntilReady() {
 					std::unique_lock<std::mutex> lock(mutex);
 					condition_variable.wait(lock, [this]() {
@@ -71,6 +96,11 @@ class MainWindow : public wxFrame {
 					});
 				}
 
+				/**
+				 * @brief Checks if the list of unsubscribed numbers is ready to be read.
+				 * 
+				 * @return true if the list is ready, false otherwise.
+				 */
 				bool isReady() const {
 					return ready.load();
 				}
@@ -104,6 +134,12 @@ class MainWindow : public wxFrame {
 		MainWindow(MainWindow&&) = delete;
 		MainWindow& operator=(MainWindow&&) = delete;
 
+		/**
+		 * @brief Updates the displayed cost per recipient and total cost in the GUI.
+		 * 
+		 * @param newCostPerRecipient The new cost per recipient in ten-thousandths of a dollar (determined by message length)
+		 * @param newTotalRecipients The new total number of recipients (determined by the number of lines in the phone numbers input box)
+		 */
 		void updateDisplayedCost(TenThousandthOfADollar newCostPerRecipient, std::uint64_t newTotalRecipients) {
 			costPerRecipient = newCostPerRecipient;
 			totalRecipients = newTotalRecipients;
@@ -117,7 +153,16 @@ class MainWindow : public wxFrame {
 
 		Twilio::Twilio& getTwilioClient() { return twilioClient; }
 
+		/**
+		 * @brief Loads Twilio settings from the specified configuration file asynchronously.
+		 * 
+		 * @param config_file_path The path to the configuration file containing Twilio settings.
+		 */
 		void loadTwilioSettingsAsync(std::filesystem::path config_file_path);
+
+		/**
+		 * @brief Loads the list of unsubscribed phone numbers asynchronously.
+		 */
 		void loadUnsubscribedNumbersAsync();
 
 		bool unsubscribedNumbersReady() const { return unsubscribedNumbersList.isReady(); }
@@ -125,6 +170,10 @@ class MainWindow : public wxFrame {
 		std::set<std::string> getUnsubscribedNumbers() { return unsubscribedNumbersList.getNumbers(); }
 };
 
+/**
+ * @brief A dialog for managing Twilio account settings.
+ * 
+ */
 class TwilioAccountSettingsWindow : public wxDialog {
 	protected:
 		wxStaticText* AccountIDLabel;
@@ -152,6 +201,10 @@ class TwilioAccountSettingsWindow : public wxDialog {
 		TwilioAccountSettingsWindow& operator=(TwilioAccountSettingsWindow&&) = delete;
 };
 
+/**
+ * @brief A dialog for displaying unsubscribed or invalid phone numbers.
+ * 
+ */
 class UnsubscribedNumbersWindow : public wxDialog {
 	protected:
 		wxTextCtrl* UnsubscribedNumbersTextbox;

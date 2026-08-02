@@ -28,7 +28,15 @@ namespace {
 
 // Helper function to deal with curl's C-style callbacks
 
-// Write curl response to a stringstream
+/**
+ * @brief Callback function for writing curl response data to a stringstream.
+ * 
+ * @param ptr Pointer to the data received from the server.
+ * @param size Size of each data element.
+ * @param nmemb Number of data elements received.
+ * @param userdata Pointer to the user-defined data (in this case, a stringstream).
+ * @return std::size_t The number of bytes actually written to the stringstream.
+ */
 std::size_t _stream_write(char* ptr, std::size_t size, std::size_t nmemb, void* userdata) {
 	std::size_t response_size = size * nmemb;
 	auto* ss = static_cast<std::stringstream*>(userdata);

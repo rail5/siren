@@ -23,6 +23,12 @@ namespace Siren {
 
 using TenThousandthOfADollar = std::uint64_t;
 
+/**
+ * @brief Formats a TenThousandthOfADollar value into a human-readable string.
+ * 
+ * @param cost The cost in ten-thousandths of a dollar.
+ * @return std::string The formatted cost as a string in the format "D.CCtt", where D is dollars, CC is cents, and tt is ten-thousandths of a dollar.
+ */
 inline std::string formatCost(TenThousandthOfADollar cost) {
 	std::uint64_t dollars = cost / 10000;
 	std::uint64_t cents = (cost % 10000) / 100;
@@ -39,6 +45,12 @@ inline std::string formatCost(TenThousandthOfADollar cost) {
 	return result;
 }
 
+/**
+ * @brief Get the home directory of the current user in a cross-platform manner.
+ * 
+ * @return std::filesystem::path The path to the home directory.
+ * @throws std::runtime_error If the home directory cannot be determined.
+ */
 inline std::filesystem::path getHomeDirectory() {
 	#ifdef _WIN32
 		PWSTR path = nullptr;

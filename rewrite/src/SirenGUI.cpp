@@ -13,8 +13,10 @@
 
 #include <wx/msgdlg.h>
 #include <wx/utils.h>
+#include <wx/weakref.h>
 
 #include <memory>
+#include <thread>
 
 namespace Siren::GUI {
 
@@ -272,33 +274,107 @@ MainWindow::MainWindow(
 
 	this->Centre(wxBOTH);
 
-	// Attempt to load Twilio settings from the config file
-	std::filesystem::path config_file_path = Siren::getHomeDirectory() / ".siren-config";
-	// Check if the config file exists before attempting to load it
-	// If not, try to load from the old-style XML config file (~/.siren-config.xml)
-	if (!std::filesystem::exists(config_file_path)) config_file_path = Siren::getHomeDirectory() / "siren-config.xml";
+	SignedInLabel->SetLabel(_("Signing in..."));
+	AccountBalanceLabel->SetLabel(_("Balance: loading..."));
+	SignedInLabel->Wrap(-1);
+	AccountBalanceLabel->Wrap(-1);
+	Layout();
 
-	if (twilioClient.loadSettingsFromConfigFile(config_file_path)) {
-		// If the settings were successfully loaded, check if we can authenticate with Twilio
-		if (!twilioClient.canAuthenticate()) {
-			wxMessageBox(
-				_("Could not authenticate with the Twilio API. Please check your Account ID and Auth Token."),
-				_("Authentication Error"),
-				wxOK | wxICON_ERROR,
-				this);
-		} else if (!twilioClient.fromNumberIsValid()) {
-			wxMessageBox(
-				_("The provided \"From\" phone number is not valid for this Twilio account. Please check the number and ensure it is associated with your Twilio account."),
-				_("Invalid From Number"),
-				wxOK | wxICON_ERROR,
-				this);
-		} else {
-			SignedInLabel->SetLabel(_("Signed in to Twilio"));
-			AccountBalanceLabel->SetLabel(_("Balance: $") + twilioClient.getAccountBalance());
-		}
-	}
+	// Attempt to load Twilio settings from the config file in the background.
+	auto config_file_path = Siren::getHomeDirectory() / ".siren-config";
+	// Check if the config file exists before attempting to load it.
+	// If not, try to load from the old-style XML config file (~/.siren-config.xml).
+	if (!std::filesystem::exists(config_file_path)) config_file_path = Siren::getHomeDirectory() / "siren-config.xml";
+	loadTwilioSettingsAsync(config_file_path);
 }
 
+void MainWindow::loadTwilioSettingsAsync(std::filesystem::path config_file_path) {
+	wxWeakRef<MainWindow> weak_self(this);
+	std::thread([weak_self, config_file_path]() mutable {
+		Twilio::Twilio startup_twilio;
+
+		if (!startup_twilio.loadSettingsFromConfigFile(config_file_path)) {
+			if (weak_self) weak_self->CallAfter([weak_self]() {
+				if (!weak_self) return;
+				weak_self->SignedInLabel->SetLabel(_("You are not signed in"));
+				weak_self->AccountBalanceLabel->SetLabel(_("Balance: $0"));
+				weak_self->SignedInLabel->Wrap(-1);
+				weak_self->AccountBalanceLabel->Wrap(-1);
+				weak_self->Layout();
+			});
+			return;
+		}
+
+		if (weak_self) weak_self->CallAfter([weak_self]() {
+			if (!weak_self) return;
+			weak_self->SignedInLabel->SetLabel(_("Signing in..."));
+			weak_self->AccountBalanceLabel->SetLabel(_("Balance: loading..."));
+			weak_self->SignedInLabel->Wrap(-1);
+			weak_self->AccountBalanceLabel->Wrap(-1);
+			weak_self->Layout();
+		});
+
+		const std::string account_sid = startup_twilio.getAccountSID();
+		const std::string auth_token = startup_twilio.getAuthToken();
+		const std::string from_number = startup_twilio.getFromNumber();
+
+		const bool can_authenticate = startup_twilio.canAuthenticate();
+		const bool from_number_is_valid = can_authenticate && startup_twilio.fromNumberIsValid();
+		const std::string account_balance = (can_authenticate && from_number_is_valid)
+			? startup_twilio.getAccountBalance()
+			: "0";
+
+		if (weak_self) weak_self->CallAfter([
+			weak_self,
+			account_sid,
+			auth_token,
+			from_number,
+			can_authenticate,
+			from_number_is_valid,
+			account_balance
+		]() {
+			if (!weak_self) return;
+
+			weak_self->twilioClient.setAccountSID(account_sid);
+			weak_self->twilioClient.setAuthToken(auth_token);
+			weak_self->twilioClient.setFromNumber(from_number);
+
+			if (!can_authenticate) {
+				wxMessageBox(
+					_("Could not authenticate with the Twilio API. Please check your Account ID and Auth Token."),
+					_("Authentication Error"),
+					wxOK | wxICON_ERROR,
+					weak_self);
+				weak_self->SignedInLabel->SetLabel(_("You are not signed in"));
+				weak_self->AccountBalanceLabel->SetLabel(_("Balance: $0"));
+				weak_self->SignedInLabel->Wrap(-1);
+				weak_self->AccountBalanceLabel->Wrap(-1);
+				weak_self->Layout();
+				return;
+			}
+
+			if (!from_number_is_valid) {
+				wxMessageBox(
+					_("The provided \"From\" phone number is not valid for this Twilio account. Please check the number and ensure it is associated with your Twilio account."),
+					_("Invalid From Number"),
+					wxOK | wxICON_ERROR,
+					weak_self);
+				weak_self->SignedInLabel->SetLabel(_("You are not signed in"));
+				weak_self->AccountBalanceLabel->SetLabel(_("Balance: $0"));
+				weak_self->SignedInLabel->Wrap(-1);
+				weak_self->AccountBalanceLabel->Wrap(-1);
+				weak_self->Layout();
+				return;
+			}
+
+			weak_self->SignedInLabel->SetLabel(_("Signed in to Twilio"));
+			weak_self->AccountBalanceLabel->SetLabel(_("Balance: $") + account_balance);
+			weak_self->SignedInLabel->Wrap(-1);
+			weak_self->AccountBalanceLabel->Wrap(-1);
+			weak_self->Layout();
+		});
+	}).detach();
+}
 TwilioAccountSettingsWindow::TwilioAccountSettingsWindow(
 	wxWindow* parent,
 	wxWindowID id,
@@ -461,6 +537,8 @@ TwilioAccountSettingsWindow::TwilioAccountSettingsWindow(
 		twilio.setFromNumber(FromNumberInputBox->GetValue().ToStdString());
 		std::filesystem::path config_file_path = Siren::getHomeDirectory() / ".siren-config";
 		twilio.saveConfigFile(config_file_path);
+
+		parent_window->loadTwilioSettingsAsync(config_file_path);
 
 		// Close the dialog after saving settings
 		this->Close();

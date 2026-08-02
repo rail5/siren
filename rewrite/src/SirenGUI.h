@@ -74,9 +74,14 @@ class MainWindow : public wxFrame {
 
 			CostPerMessageLabel->SetLabel(_("Cost per recipient: $") + formatCost(costPerRecipient) + _(" (approx)"));
 			TotalCostLabel->SetLabel(_("Total cost: $") + formatCost(calculateTotalCost()) + _(" (approx)"));
+			CostPerMessageLabel->Wrap(-1);
+			TotalCostLabel->Wrap(-1);
+			Layout();
 		}
 
 		Twilio::Twilio& getTwilioClient() { return twilioClient; }
+
+		void loadTwilioSettingsAsync(std::filesystem::path config_file_path);
 };
 
 class TwilioAccountSettingsWindow : public wxDialog {

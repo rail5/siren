@@ -172,10 +172,26 @@ MainWindow::MainWindow(
 	// 2. Calculate the cost per recipient (Twilio::getMessageCost)
 	// 3. Update the displayed cost (MainWindow::updateDisplayedCost)
 	MessageBox->Bind(wxEVT_TEXT, [this](wxCommandEvent& /*event*/) {
-		std::u8string message_body_utf8 = reinterpret_cast<const char8_t*>(MessageBox->GetValue().ToUTF8().data());
+		const wxString current_value = MessageBox->GetValue();
+		std::u8string message_body_utf8 = reinterpret_cast<const char8_t*>(current_value.ToUTF8().data());
 		std::u8string normalized_message_body = Twilio::Twilio::normalizeMessageBody(message_body_utf8);
-		// Update the textbox contents with the normalized message body
-		MessageBox->ChangeValue(wxString::FromUTF8(reinterpret_cast<const char*>(normalized_message_body.c_str())));
+		const wxString normalized_value = wxString::FromUTF8(reinterpret_cast<const char*>(normalized_message_body.c_str()));
+		if (normalized_value != current_value) {
+			std::int64_t selection_start = 0;
+			std::int64_t selection_end = 0;
+			MessageBox->GetSelection(&selection_start, &selection_end);
+			const auto insertion_point = MessageBox->GetInsertionPoint();
+
+			// Defer the rewrite so GTK can finish processing the paste event first.
+			MessageBox->CallAfter([this, normalized_value, selection_start, selection_end, insertion_point]() {
+				MessageBox->ChangeValue(normalized_value);
+				if (selection_start != selection_end) {
+					MessageBox->SetSelection(selection_start, selection_end);
+				} else {
+					MessageBox->SetInsertionPoint(insertion_point);
+				}
+			});
+		}
 		TenThousandthOfADollar new_cost_per_recipient = Twilio::Twilio::getMessageCost(normalized_message_body);
 		updateDisplayedCost(new_cost_per_recipient, totalRecipients);
 	});

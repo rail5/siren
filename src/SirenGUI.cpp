@@ -19,6 +19,8 @@
 #include <thread>
 #include <algorithm>
 
+#include "siren.xpm"
+
 namespace Siren::GUI {
 
 MainWindow::MainWindow(
@@ -32,6 +34,9 @@ MainWindow::MainWindow(
 	parent, id, title, pos, size, style
 ) {
 	this->SetSizeHints(wxSize(581,437), wxDefaultSize);
+
+	wxIcon icon(siren_xpm.data());
+	this->SetIcon(icon);
 
 	//NOLINTBEGIN(cppcoreguidelines-prefer-member-initializer)
 	MainMenuBar = new wxMenuBar(0);

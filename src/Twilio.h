@@ -54,6 +54,9 @@ class Twilio final {
 		 */
 		bool parseOldStyleConfigFile(const std::filesystem::path& config_file_path);
 	public:
+
+		static constexpr TenThousandthOfADollar costPerSegment = 83; // Twilio charges $0.0083 per segment (as of 2026-08-03)
+
 		Twilio() = default;
 		~Twilio() = default;
 
@@ -145,7 +148,7 @@ class Twilio final {
 		 * @param message_body The body of the message to be sent.
 		 * @return TenThousandthOfADollar The cost of sending the message in ten-thousandths of a dollar (e.g. 83 = $0.0083).
 		 */
-		static TenThousandthOfADollar getMessageCost(const std::u8string& message_body);
+		static TenThousandthOfADollar getMessageCost(std::u8string_view message_body);
 
 		/**
 		 * @brief Normalize a phone number to the E.164 format.
@@ -161,7 +164,7 @@ class Twilio final {
 		 * @param message_body The message body to normalize.
 		 * @return std::u8string The normalized message body containing only valid GSM characters.
 		 */
-		static std::u8string normalizeMessageBody(const std::u8string& message_body);
+		static std::u8string normalizeMessageBody(std::u8string_view message_body);
 
 		/**
 		 * @brief Extract individual UTF-8 characters from a message body, returning them as a vector of strings.
@@ -170,7 +173,7 @@ class Twilio final {
 		 * @param message_body The message body from which to extract UTF-8 characters.
 		 * @return std::vector<std::u8string> A vector containing each UTF-8 character as a separate string.
 		 */
-		static std::vector<std::u8string> extractUTF8Characters(const std::u8string& message_body);
+		static std::vector<std::u8string_view> extractUTF8Characters(std::u8string_view message_body);
 
 		// Valid characters in the GSM 03.38 character set, which is used for SMS messages.
 		// Presence of characters outside of this set can multiply message cost by 3 or more.

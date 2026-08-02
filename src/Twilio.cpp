@@ -64,8 +64,8 @@ std::string Twilio::normalizePhoneNumber(const std::string& phone_number) {
 	return normalized;
 }
 
-std::vector<std::u8string> Twilio::extractUTF8Characters(const std::u8string& message_body) {
-	std::vector<std::u8string> utf8_characters;
+std::vector<std::u8string_view> Twilio::extractUTF8Characters(std::u8string_view message_body) {
+	std::vector<std::u8string_view> utf8_characters;
 	for (std::size_t i = 0; i < message_body.size(); ) {
 		unsigned char c = message_body[i];
 		std::size_t char_length = 0;
@@ -93,7 +93,7 @@ std::vector<std::u8string> Twilio::extractUTF8Characters(const std::u8string& me
 	return utf8_characters;
 }
 
-std::u8string Twilio::normalizeMessageBody(const std::u8string& message_body) {
+std::u8string Twilio::normalizeMessageBody(std::u8string_view message_body) {
 	// Remove all non-GSM characters from the message body
 	// See: https://en.wikipedia.org/wiki/GSM_03.38
 	// The presence of non-GSM characters can multiply message cost by 3 or more
@@ -122,14 +122,14 @@ std::u8string Twilio::normalizeMessageBody(const std::u8string& message_body) {
 	return normalized;
 }
 
-TenThousandthOfADollar Twilio::getMessageCost(const std::u8string& message_body) {
+TenThousandthOfADollar Twilio::getMessageCost(std::u8string_view message_body) {
 	// Calculate the cost of sending a message based on its length
 	// We assume that the message body has already been normalized to GSM characters
 
 	// The rule:
-	// 1. If the message body is 160 characters or less, it costs $0.0083 per recipient
+	// 1. If the message body is 160 characters or less, it costs Twilio::costPerSegment per recipient
 	// 2. If the message body is more than 160 characters, it is split into segments of 153 characters each,
-	//    and each segment costs $0.0083 per recipient
+	//    and each segment costs Twilio::costPerSegment per recipient
 
 	const auto utf8_characters = extractUTF8Characters(message_body);
 
@@ -140,10 +140,10 @@ TenThousandthOfADollar Twilio::getMessageCost(const std::u8string& message_body)
 
 	const auto full_message_length = utf8_characters.size() + unsubscribe_instructions.size();
 
-	if (full_message_length <= 160) return 83;
+	if (full_message_length <= 160) return Twilio::costPerSegment;
 
 	const std::size_t number_of_segments = (full_message_length + 152) / 153; // Round up to the nearest segment
-	return static_cast<TenThousandthOfADollar>(number_of_segments * 83);
+	return static_cast<TenThousandthOfADollar>(number_of_segments * Twilio::costPerSegment);
 }
 
 bool Twilio::canConnect() {

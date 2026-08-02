@@ -177,11 +177,10 @@ MainWindow::MainWindow(
 
 	// Add callback for when the message box text changes:
 	// 1. Normalize the message body to remove non-GSM characters (Twilio::normalizeMessageBody)
-	// 2. Calculate the cost per recipient (Twilio::getMessageCost)
-	// 3. Update the displayed cost (MainWindow::updateDisplayedCost)
+	// 2. Update the displayed cost per recipient and total cost in the GUI (MainWindow::updateDisplayedCost)
 	MessageBox->Bind(wxEVT_TEXT, [this](wxCommandEvent& /*event*/) {
-		const wxString current_value = MessageBox->GetValue();
-		std::u8string message_body_utf8 = reinterpret_cast<const char8_t*>(current_value.ToUTF8().data());
+		const wxString& current_value = MessageBox->GetValue();
+		const std::u8string message_body_utf8 = reinterpret_cast<const char8_t*>(current_value.ToUTF8().data());
 		std::u8string normalized_message_body = Twilio::Twilio::normalizeMessageBody(message_body_utf8);
 		const wxString normalized_value = wxString::FromUTF8(reinterpret_cast<const char*>(normalized_message_body.c_str()));
 		if (normalized_value != current_value) {
@@ -200,14 +199,14 @@ MainWindow::MainWindow(
 				}
 			});
 		}
-		TenThousandthOfADollar new_cost_per_recipient = Twilio::Twilio::getMessageCost(normalized_message_body);
-		updateDisplayedCost(new_cost_per_recipient, totalRecipients);
+		
+		updateDisplayedCost();
 	});
 
 	CostPerMessageLabel = new wxStaticText(
 		this,
 		wxID_ANY,
-		_("Cost per recipient: $0.0083 (approx)"),
+		_("Cost per recipient: $0.0000 (approx)"),
 		wxDefaultPosition,
 		wxDefaultSize,
 		0);
@@ -241,9 +240,7 @@ MainWindow::MainWindow(
 	// 1. Count the number of lines in the input box (each line is a recipient)
 	// 2. Update the displayed total cost (MainWindow::updateDisplayedCost)
 	PhoneNumbersInputBox->Bind(wxEVT_TEXT, [this](wxCommandEvent& /*event*/) {
-		std::string phone_numbers_text = PhoneNumbersInputBox->GetValue().ToStdString();
-		std::uint64_t new_total_recipients = std::count(phone_numbers_text.begin(), phone_numbers_text.end(), '\n') + 1;
-		updateDisplayedCost(costPerRecipient, new_total_recipients);
+		updateDisplayedCost();
 	});
 
 	PhoneNumbersSizer->Add(PhoneNumbersInputBox, 0, wxALL|wxEXPAND, 5);
@@ -251,13 +248,14 @@ MainWindow::MainWindow(
 	TotalCostLabel = new wxStaticText(
 		this,
 		wxID_ANY,
-		_("Total cost: $0.0332 (approx)"),
+		_("Total cost: $0.0000 (approx)"),
 		wxDefaultPosition,
 		wxDefaultSize,
 		0);
 	TotalCostLabel->Wrap(-1);
 	PhoneNumbersSizer->Add(TotalCostLabel, 0, wxALIGN_RIGHT|wxRIGHT, 5);
 
+	updateDisplayedCost(); // Update the displayed cost based on the initial message and phone numbers
 
 	MainContentSizer->Add(PhoneNumbersSizer, 1, wxEXPAND, 5);
 

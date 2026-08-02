@@ -42,7 +42,7 @@ namespace Siren::GUI {
  */
 class MainWindow : public wxFrame {
 	private:
-		TenThousandthOfADollar costPerRecipient = 83; // $0.0083 per recipient (initially, longer messages cost more)
+		TenThousandthOfADollar costPerRecipient = Twilio::Twilio::costPerSegment; // $0.0083 per recipient (initially, longer messages cost more)
 		std::uint64_t totalRecipients = 4; // 4 recipients (initially, in the example text box)
 
 		TenThousandthOfADollar calculateTotalCost() const { return costPerRecipient * totalRecipients; }
@@ -126,15 +126,18 @@ class MainWindow : public wxFrame {
 		MainWindow& operator=(MainWindow&&) = delete;
 
 		/**
-		 * @brief Updates the displayed cost per recipient and total cost in the GUI.
-		 * 
-		 * @param newCostPerRecipient The new cost per recipient in ten-thousandths of a dollar (determined by message length)
-		 * @param newTotalRecipients The new total number of recipients (determined by the number of lines in the phone numbers input box)
+		 * @brief Updates the displayed cost per recipient and total cost in the GUI, based on the length of the message and the number of recipients.
 		 */
-		void updateDisplayedCost(TenThousandthOfADollar newCostPerRecipient, std::uint64_t newTotalRecipients) {
-			costPerRecipient = newCostPerRecipient;
-			totalRecipients = newTotalRecipients;
+		void updateDisplayedCost() {
+			// 1. Calculate the cost per recipient based on the length of the message (MainWindow::calculateCostPerRecipient)
+			std::u8string_view message_body_utf8 = reinterpret_cast<const char8_t*>(MessageBox->GetValue().ToUTF8().data());
+			costPerRecipient = Twilio::Twilio::getMessageCost(message_body_utf8);
 
+			// 2. Count the number of lines in the phone numbers input box (each line is a recipient)
+			std::string phone_numbers_text = PhoneNumbersInputBox->GetValue().ToStdString();
+			totalRecipients = std::count(phone_numbers_text.begin(), phone_numbers_text.end(), '\n') + 1;
+
+			// 3. Update the displayed cost per recipient and total cost in the GUI
 			CostPerMessageLabel->SetLabel(_("Cost per recipient: $") + formatCost(costPerRecipient) + _(" (approx)"));
 			TotalCostLabel->SetLabel(_("Total cost: $") + formatCost(calculateTotalCost()) + _(" (approx)"));
 			CostPerMessageLabel->Wrap(-1);

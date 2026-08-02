@@ -541,6 +541,7 @@ TwilioAccountSettingsWindow::TwilioAccountSettingsWindow(
 			wxOK | wxICON_INFORMATION,
 			this);
 	});
+	SettingsStackSizer->Add(CheckSettingsButton, 0, wxALL|wxEXPAND, 5);
 
 	SaveSettingsButton = new wxButton(this, wxID_ANY, _("Save settings"), wxDefaultPosition, wxDefaultSize, 0);
 	SettingsStackSizer->Add(SaveSettingsButton, 0, wxALL|wxEXPAND, 5);

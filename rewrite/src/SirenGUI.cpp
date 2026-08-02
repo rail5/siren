@@ -9,6 +9,8 @@
 
 #include "SirenGUI.h"
 
+#include "Twilio.h"
+
 #include <wx/msgdlg.h>
 #include <wx/utils.h>
 
@@ -165,6 +167,19 @@ MainWindow::MainWindow(
 
 	MessageSizer->Add(MessageBox, 0, wxALL|wxEXPAND, 5);
 
+	// Add callback for when the message box text changes:
+	// 1. Normalize the message body to remove non-GSM characters (Twilio::normalizeMessageBody)
+	// 2. Calculate the cost per recipient (Twilio::getMessageCost)
+	// 3. Update the displayed cost (MainWindow::updateDisplayedCost)
+	MessageBox->Bind(wxEVT_TEXT, [this](wxCommandEvent& /*event*/) {
+		std::u8string message_body_utf8 = reinterpret_cast<const char8_t*>(MessageBox->GetValue().ToUTF8().data());
+		std::u8string normalized_message_body = Twilio::Twilio::normalizeMessageBody(message_body_utf8);
+		// Update the textbox contents with the normalized message body
+		MessageBox->ChangeValue(wxString::FromUTF8(reinterpret_cast<const char*>(normalized_message_body.c_str())));
+		TenThousandthOfADollar new_cost_per_recipient = Twilio::Twilio::getMessageCost(normalized_message_body);
+		updateDisplayedCost(new_cost_per_recipient, totalRecipients);
+	});
+
 	CostPerMessageLabel = new wxStaticText(
 		this,
 		wxID_ANY,
@@ -197,6 +212,15 @@ MainWindow::MainWindow(
 		wxDefaultSize,
 		wxTE_MULTILINE);
 	PhoneNumbersInputBox->SetMinSize(wxSize(200,250));
+
+	// Add callback for when the phone numbers input box text changes:
+	// 1. Count the number of lines in the input box (each line is a recipient)
+	// 2. Update the displayed total cost (MainWindow::updateDisplayedCost)
+	PhoneNumbersInputBox->Bind(wxEVT_TEXT, [this](wxCommandEvent& /*event*/) {
+		std::string phone_numbers_text = PhoneNumbersInputBox->GetValue().ToStdString();
+		std::uint64_t new_total_recipients = std::count(phone_numbers_text.begin(), phone_numbers_text.end(), '\n') + 1;
+		updateDisplayedCost(costPerRecipient, new_total_recipients);
+	});
 
 	PhoneNumbersSizer->Add(PhoneNumbersInputBox, 0, wxALL|wxEXPAND, 5);
 

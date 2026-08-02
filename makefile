@@ -8,7 +8,7 @@ BUILDDIR    := bin
 OBJDIR      := $(BUILDDIR)/obj
 SRCDIR      := src
 
-SRCS        := $(wildcard $(SRCDIR)/*.cpp)
+SRCS        := $(shell find $(SRCDIR) -name '*.cpp')
 OBJS        := $(patsubst $(SRCDIR)/%.cpp,$(OBJDIR)/%.o,$(SRCS))
 TARGET      := $(BUILDDIR)/siren
 
@@ -17,7 +17,7 @@ $(TARGET): $(OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(WX_LDFLAGS) $(LDFLAGS)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
-	@mkdir -p $(OBJDIR)
+	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) $(WX_CXXFLAGS) -c -o $@ $<
 
 .PHONY: clean

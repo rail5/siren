@@ -137,7 +137,7 @@ class Twilio final {
 		 * 
 		 * @return true if the API is reachable, false otherwise.
 		 */
-		bool canConnect();
+		static bool canConnect();
 
 		/**
 		 * @brief Approximate the cost of sending a message based on its length and Twilio's pricing rules.

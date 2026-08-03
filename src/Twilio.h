@@ -18,6 +18,57 @@
 
 namespace Siren::Twilio {
 
+class PhoneNumber final {
+	private:
+		std::string phone_number;
+		std::string friendly_name;
+	public:
+		static std::string normalize(std::string_view phone_number);
+
+		PhoneNumber() = default;
+		PhoneNumber(std::string_view number, std::string_view name = "") : phone_number(normalize(number)), friendly_name(name) {}
+
+		~PhoneNumber() = default;
+		PhoneNumber(const PhoneNumber&) = default;
+		PhoneNumber& operator=(const PhoneNumber&) = default;
+		PhoneNumber(PhoneNumber&&) = default;
+		PhoneNumber& operator=(PhoneNumber&&) = default;
+
+		void setNumber(std::string_view number) { phone_number = normalize(number); }
+		std::string_view getNumber() const { return phone_number; }
+		void setName(std::string_view name) { friendly_name = name; }
+		std::string_view getName() const { return friendly_name; }
+
+		friend bool operator<(const PhoneNumber& lhs, const PhoneNumber& rhs) {
+			return lhs.phone_number < rhs.phone_number;
+		}
+		friend bool operator==(const PhoneNumber& lhs, const PhoneNumber& rhs) {
+			return lhs.phone_number == rhs.phone_number;
+		}
+		friend bool operator!=(const PhoneNumber& lhs, const PhoneNumber& rhs) {
+			return !(lhs == rhs);
+		}
+		friend bool operator>(const PhoneNumber& lhs, const PhoneNumber& rhs) {
+			return rhs < lhs;
+		}
+		friend bool operator<=(const PhoneNumber& lhs, const PhoneNumber& rhs) {
+			return !(rhs < lhs);
+		}
+		friend bool operator>=(const PhoneNumber& lhs, const PhoneNumber& rhs) {
+			return !(lhs < rhs);
+		}
+
+		operator std::string_view() const { return phone_number; }
+		operator std::string() const { return phone_number; }
+
+		// Ensure that PhoneNumber's hash function does NOT depend on the friendly name, only the phone number itself.
+		struct Hash {
+			std::size_t operator()(const PhoneNumber& number) const {
+				return std::hash<std::string>()(number.phone_number);
+			}
+		};
+};
+
 using TwilioResult = OperationResult;
 
 /**
@@ -28,7 +79,7 @@ class Twilio final {
 	private:
 		std::string account_sid;
 		std::string auth_token;
-		std::string from_number;
+		PhoneNumber from_number;
 
 		// JSON config file format:
 
@@ -83,10 +134,10 @@ class Twilio final {
 
 		void setAccountSID(const std::string& account_sid_in) { account_sid = account_sid_in; }
 		void setAuthToken(const std::string& auth_token_in) { auth_token = auth_token_in; }
-		void setFromNumber(const std::string& from_number_in) { from_number = normalizePhoneNumber(from_number_in); }
+		void setFromNumber(const PhoneNumber& from_number_in) { from_number = from_number_in; }
 		const std::string& getAccountSID() const { return account_sid; }
 		const std::string& getAuthToken() const { return auth_token; }
-		const std::string& getFromNumber() const { return from_number; }
+		const PhoneNumber& getFromNumber() const { return from_number; }
 
 		/**
 		 * @brief Sends a message using the Twilio API.
@@ -98,7 +149,7 @@ class Twilio final {
 		 * @return TwilioResult The result of the operation.
 		 */
 		TwilioResult sendMessage(
-			const std::string& to_number,
+			const PhoneNumber& to_number,
 			const std::u8string& message_body,
 			const std::string& picture_url = ""
 		);
@@ -117,9 +168,9 @@ class Twilio final {
 		 * This list is used to filter out invalid recipients before sending messages.
 		 * This function should only ever be called from a background thread, as it may take a long time to complete.
 		 * 
-		 * @return std::set<std::string> The set of unsubscribed phone numbers.
+		 * @return std::set<PhoneNumber> The set of unsubscribed phone numbers.
 		 */
-		std::set<std::string> getUnsubscribedNumbers();
+		std::set<PhoneNumber> getUnsubscribedNumbers();
 
 		/**
 		 * @brief Check if the current settings contain valid credentials for authenticating with the Twilio API.
@@ -149,14 +200,6 @@ class Twilio final {
 		 * @return TenThousandthOfADollar The cost of sending the message in ten-thousandths of a dollar (e.g. 83 = $0.0083).
 		 */
 		static TenThousandthOfADollar getMessageCost(std::u8string_view message_body);
-
-		/**
-		 * @brief Normalize a phone number to the E.164 format.
-		 * 
-		 * @param phone_number The phone number to normalize.
-		 * @return std::string The normalized phone number in E.164 format.
-		 */
-		static std::string normalizePhoneNumber(const std::string& phone_number);
 
 		/**
 		 * @brief Normalize a message body to ensure it only contains valid GSM characters, replacing or removing invalid characters as necessary.

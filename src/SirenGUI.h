@@ -58,7 +58,7 @@ class MainWindow : public wxFrame {
 		 */
 		class UnsubscribedNumbersList {
 			private:
-				std::set<std::string> numbers;
+				std::set<Twilio::PhoneNumber> numbers;
 				std::atomic<bool> ready{false};
 				std::mutex mutex;
 				std::condition_variable condition_variable;
@@ -68,7 +68,7 @@ class MainWindow : public wxFrame {
 				 * 
 				 * @param new_numbers The new set of unsubscribed numbers.
 				 */
-				void setNumbers(const std::set<std::string>& new_numbers) {
+				void setNumbers(const std::set<Twilio::PhoneNumber>& new_numbers) {
 					std::lock_guard<std::mutex> lock(mutex);
 					numbers = new_numbers;
 					ready = true;
@@ -78,9 +78,9 @@ class MainWindow : public wxFrame {
 				/**
 				 * @brief Get the list of unsubscribed numbers. This method is thread-safe.
 				 * 
-				 * @return std::set<std::string> The set of unsubscribed numbers.
+				 * @return std::set<Twilio::PhoneNumber> The set of unsubscribed numbers.
 				 */
-				std::set<std::string> getNumbers() {
+				std::set<Twilio::PhoneNumber> getNumbers() {
 					std::lock_guard<std::mutex> lock(mutex);
 					return numbers;
 				}
@@ -160,7 +160,7 @@ class MainWindow : public wxFrame {
 		void loadUnsubscribedNumbersAsync();
 
 		void waitForUnsubscribedNumbers() { unsubscribedNumbersList.waitUntilReady(); }
-		std::set<std::string> getUnsubscribedNumbers() { return unsubscribedNumbersList.getNumbers(); }
+		std::set<Twilio::PhoneNumber> getUnsubscribedNumbers() { return unsubscribedNumbersList.getNumbers(); }
 };
 
 /**

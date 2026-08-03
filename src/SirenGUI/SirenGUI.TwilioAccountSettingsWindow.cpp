@@ -94,7 +94,7 @@ TwilioAccountSettingsWindow::TwilioAccountSettingsWindow(
 		Twilio::Twilio& twilio = parent_window->getTwilioClient();
 		AccountIDInputBox->SetValue(twilio.getAccountSID());
 		AuthTokenInputBox->SetValue(twilio.getAuthToken());
-		FromNumberInputBox->SetValue(twilio.getFromNumber());
+		FromNumberInputBox->SetValue(wxString::FromUTF8(std::string(twilio.getFromNumber()).c_str()));
 	}
 
 	CheckSettingsButton = new wxButton(this, wxID_ANY, _("Check settings"), wxDefaultPosition, wxDefaultSize, 0);
@@ -120,7 +120,7 @@ TwilioAccountSettingsWindow::TwilioAccountSettingsWindow(
 		Twilio::Twilio& twilio = parent_window->getTwilioClient();
 		twilio.setAccountSID(AccountIDInputBox->GetValue().ToStdString());
 		twilio.setAuthToken(AuthTokenInputBox->GetValue().ToStdString());
-		twilio.setFromNumber(FromNumberInputBox->GetValue().ToStdString());
+		twilio.setFromNumber(Twilio::PhoneNumber(FromNumberInputBox->GetValue().ToStdString()));
 		// First: can we even connect to the Twilio API?
 		if (!Twilio::Twilio::canConnect()) {
 			wxMessageBox(
@@ -177,7 +177,7 @@ TwilioAccountSettingsWindow::TwilioAccountSettingsWindow(
 		Twilio::Twilio& twilio = parent_window->getTwilioClient();
 		twilio.setAccountSID(AccountIDInputBox->GetValue().ToStdString());
 		twilio.setAuthToken(AuthTokenInputBox->GetValue().ToStdString());
-		twilio.setFromNumber(FromNumberInputBox->GetValue().ToStdString());
+		twilio.setFromNumber(Twilio::PhoneNumber(FromNumberInputBox->GetValue().ToStdString()));
 		std::filesystem::path config_file_path = Siren::getHomeDirectory() / ".siren-config";
 		twilio.saveConfigFile(config_file_path);
 

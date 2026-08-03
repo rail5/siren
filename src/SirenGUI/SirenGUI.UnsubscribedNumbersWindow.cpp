@@ -59,7 +59,7 @@ UnsubscribedNumbersWindow::UnsubscribedNumbersWindow(
 			} else {
 				std::string unsubscribed_numbers_text;
 				for (const auto& number : unsubscribed_numbers) {
-					unsubscribed_numbers_text += number + "\n";
+					unsubscribed_numbers_text += std::string(number.getNumber()) + "\n";
 				}
 				UnsubscribedNumbersTextbox->SetValue(unsubscribed_numbers_text);
 			}

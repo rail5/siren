@@ -10,7 +10,7 @@
 
 namespace Siren::Twilio {
 
-std::string Twilio::normalizePhoneNumber(const std::string& phone_number) {
+std::string PhoneNumber::normalize(std::string_view phone_number) {
 	// Normalize a number to (something like) E.164 format
 	// We bias ourselves towards US numbers
 
@@ -74,7 +74,8 @@ bool Twilio::fromNumberIsValid() {
 		if (!data.contains("incoming_phone_numbers")) return false;
 		for (const auto& number : data["incoming_phone_numbers"]) {
 			if (!number.contains("phone_number") || number["phone_number"].is_null() || !number["phone_number"].is_string()) continue;
-			if (normalizePhoneNumber(number["phone_number"].get<std::string>()) == normalizePhoneNumber(from_number)) return true;
+			PhoneNumber api_number(number["phone_number"].get<std::string>());
+			if (api_number == from_number) return true;
 		}
 	} catch (const nlohmann::json::exception&) {
 		return false;
@@ -82,7 +83,7 @@ bool Twilio::fromNumberIsValid() {
 	return false;
 }
 
-std::set<std::string> Twilio::getUnsubscribedNumbers() {
+std::set<PhoneNumber> Twilio::getUnsubscribedNumbers() {
 	// Query api.twilio.com/2010-04-01/Accounts/{AccountSID}/Messages.json?Status=failed&PageSize={arbitrary size}
 	// Then, repeatedly follow the "next_page_uri" field until we've read all there is
 	//
@@ -97,7 +98,7 @@ std::set<std::string> Twilio::getUnsubscribedNumbers() {
 	// Unfortunately, Twilio does not provide a direct API to get the list of unsubscribed numbers,
 	// so we have to infer it from the failed messages.
 	// It would be MUCH faster if we could just get the list directly. I have no idea why Twilio doesn't provide this.
-	std::set<std::string> numbers;
+	std::set<PhoneNumber> numbers;
 	std::string next_page_uri = "/2010-04-01/Accounts/" + account_sid + "/Messages.json?Status=failed&PageSize=5000";
 	while (!next_page_uri.empty()) {
 		WebResult response = getWebConnector().sendGETRequest(
@@ -115,7 +116,8 @@ std::set<std::string> Twilio::getUnsubscribedNumbers() {
 				int error_code = number["error_code"].get<int>();
 				if (error_code == 21610 || error_code == 30006 || error_code == 21211) {
 					if (number.contains("to") && !number["to"].is_null() && number["to"].is_string()) {
-						numbers.insert(normalizePhoneNumber(number["to"].get<std::string>()));
+						PhoneNumber phone_number(number["to"].get<std::string>());
+						numbers.insert(phone_number);
 					}
 				}
 			}

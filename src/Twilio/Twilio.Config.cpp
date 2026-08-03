@@ -22,7 +22,7 @@ bool Twilio::parseConfigFile(const std::filesystem::path& config_file_path) {
 		if (!config_json.contains("account_sid") || !config_json.contains("auth_token") || !config_json.contains("from_number")) return false;
 		account_sid = config_json["account_sid"].get<std::string>();
 		auth_token = config_json["auth_token"].get<std::string>();
-		from_number = normalizePhoneNumber(config_json["from_number"].get<std::string>());
+		from_number = PhoneNumber(config_json["from_number"].get<std::string>());
 		return true;
 	} catch (const std::exception&) {
 		return false;
@@ -58,7 +58,8 @@ bool Twilio::parseOldStyleConfigFile(const std::filesystem::path& config_file_pa
 		if (!config_file.is_open()) return false;
 		std::string line;
 
-		std::string retrieved_id, retrieved_token, retrieved_number;
+		std::string retrieved_id, retrieved_token;
+		PhoneNumber retrieved_number;
 		while (std::getline(config_file, line)) {
 			auto account_id_pos = line.find("TWAccountID=\"");
 			if (account_id_pos != std::string::npos) {
@@ -81,12 +82,12 @@ bool Twilio::parseOldStyleConfigFile(const std::filesystem::path& config_file_pa
 				from_number_pos += 14; // Move past TWFromNumber="
 				auto from_number_end = line.find('\"', from_number_pos);
 				if (from_number_end != std::string::npos) {
-					retrieved_number = line.substr(from_number_pos, from_number_end - from_number_pos);
+					retrieved_number = PhoneNumber(line.substr(from_number_pos, from_number_end - from_number_pos));
 				}
 			}
 		}
 
-		if (retrieved_id.empty() || retrieved_token.empty() || retrieved_number.empty()) return false;
+		if (retrieved_id.empty() || retrieved_token.empty() || retrieved_number.getNumber().empty()) return false;
 
 		account_sid = retrieved_id;
 		auth_token = retrieved_token;

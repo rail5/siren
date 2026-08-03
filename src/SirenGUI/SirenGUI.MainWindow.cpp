@@ -314,7 +314,6 @@ void MainWindow::loadTwilioSettingsAsync(std::filesystem::path config_file_path)
 
 		const std::string& account_sid = weak_self->twilioClient.getAccountSID();
 		const std::string& auth_token = weak_self->twilioClient.getAuthToken();
-		const std::string& from_number = weak_self->twilioClient.getFromNumber();
 
 		const bool can_authenticate = weak_self->twilioClient.canAuthenticate();
 		const bool from_number_is_valid = can_authenticate && weak_self->twilioClient.fromNumberIsValid();
@@ -326,7 +325,6 @@ void MainWindow::loadTwilioSettingsAsync(std::filesystem::path config_file_path)
 			weak_self,
 			account_sid,
 			auth_token,
-			from_number,
 			can_authenticate,
 			from_number_is_valid,
 			account_balance
@@ -380,7 +378,7 @@ void MainWindow::loadUnsubscribedNumbersAsync() {
 	std::thread([weak_self, account_sid, auth_token]() mutable {
 		if (!weak_self) return;
 
-		std::set<std::string> unsubscribed_numbers;
+		std::set<Twilio::PhoneNumber> unsubscribed_numbers;
 		try {
 			Twilio::Twilio twilio;
 			twilio.setAccountSID(account_sid);

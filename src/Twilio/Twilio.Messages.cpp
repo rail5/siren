@@ -95,15 +95,13 @@ TenThousandthOfADollar Twilio::getMessageCost(std::u8string_view message_body) {
 }
 
 TwilioResult Twilio::sendMessage(
-	const std::string& to_number,
+	const PhoneNumber& to_number,
 	const std::u8string& message_body,
 	const std::string& picture_url
 ) {
 	// Send a message via the Twilio API
-	// Returns a TwilioResponse object which contains the HTTP status code and any error messages
 
-	// Normalize the phone number and message body
-	std::string normalized_to_number = normalizePhoneNumber(to_number);
+	// Normalize the message body
 	std::u8string normalized_message_body = normalizeMessageBody(message_body);
 
 	{
@@ -144,7 +142,10 @@ TwilioResult Twilio::sendMessage(
 
 	curl_easy_cleanup(curl);
 
-	std::string post_data = "To=" + normalized_to_number + "&From=" + from_number + "&Body=" + escaped_message_body;
+	std::string post_data = "To=" + std::string(to_number.getNumber())
+		+ "&From=" + std::string(from_number.getNumber())
+		+ "&Body=" + escaped_message_body;
+
 	if (escaped_picture_url != nullptr) post_data += "&MediaUrl=" + std::string(escaped_picture_url);
 
 	auto response = getWebConnector().sendPOSTRequest(

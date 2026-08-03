@@ -298,8 +298,9 @@ MainWindow::MainWindow(
 void MainWindow::loadTwilioSettingsAsync(std::filesystem::path config_file_path) {
 	wxWeakRef<MainWindow> weak_self(this);
 	std::thread([weak_self, config_file_path]() mutable {
+		if (!weak_self) return;
 		if (!weak_self->twilioClient.loadSettingsFromConfigFile(config_file_path)) {
-			if (weak_self) weak_self->CallAfter([weak_self]() {
+			weak_self->CallAfter([weak_self]() {
 				if (!weak_self) return;
 				weak_self->SignedInLabel->SetLabel(_("You are not signed in"));
 				weak_self->AccountBalanceLabel->SetLabel(_("Balance: $0"));

@@ -267,6 +267,14 @@ MainWindow::MainWindow(
 
 	VerticalSizer->Add(SendButtonSizer, 1, wxEXPAND, 5);
 
+	// SendButton callback: when clicked, open a MessageSendingProgressWindow and send the messages in a background thread
+	SendButton->Bind(wxEVT_BUTTON, [this](wxCommandEvent& /*event*/) {
+		auto* progress_window = new MessageSendingProgressWindow(this);
+		progress_window->ShowModal();
+		progress_window->Destroy();
+		//TODO(@rail5): Send the messages in a background thread, and update the progress bar in the progress window
+	});
+
 
 	this->SetSizer(VerticalSizer);
 	this->Layout();

@@ -23,6 +23,7 @@
 #include <wx/button.h>
 #include <wx/frame.h>
 #include <wx/dialog.h>
+#include <wx/gauge.h>
 
 #include "Siren.h"
 #include "Twilio.h"
@@ -216,6 +217,30 @@ class UnsubscribedNumbersWindow : public wxDialog {
 		UnsubscribedNumbersWindow& operator=(const UnsubscribedNumbersWindow&) = delete;
 		UnsubscribedNumbersWindow(UnsubscribedNumbersWindow&&) = delete;
 		UnsubscribedNumbersWindow& operator=(UnsubscribedNumbersWindow&&) = delete;
+};
+
+class MessageSendingProgressWindow : public wxDialog {
+	protected:
+		wxStaticText* ProgressLabel;
+		wxGauge* ProgressBar;
+		wxButton* CancelButton;
+
+	public:
+		MessageSendingProgressWindow(wxWindow* parent,
+			wxWindowID id = wxID_ANY,
+			const wxString& title = _("Siren - Sending Messages"),
+			const wxPoint& pos = wxDefaultPosition,
+			const wxSize& size = wxSize(400, 150),
+			std::int64_t style = wxCAPTION|wxSYSTEM_MENU|wxTAB_TRAVERSAL); // No "close" button
+
+		~MessageSendingProgressWindow() override = default;
+
+		MessageSendingProgressWindow(const MessageSendingProgressWindow&) = delete;
+		MessageSendingProgressWindow& operator=(const MessageSendingProgressWindow&) = delete;
+		MessageSendingProgressWindow(MessageSendingProgressWindow&&) = delete;
+		MessageSendingProgressWindow& operator=(MessageSendingProgressWindow&&) = delete;
+
+		void updateProgress(std::size_t current, std::size_t total);
 };
 
 } // namespace Siren::GUI

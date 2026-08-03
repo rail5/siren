@@ -18,6 +18,11 @@
 
 namespace Siren::Twilio {
 
+/**
+ * @brief A class representing a phone number
+ * All numbers are normalized to (something like) E.164 format, biased towards US numbers.
+ * All numbers can have an attached "friendly name," which is only for display purposes, and is not used in comparison, sorting, or hashing. 
+ */
 class PhoneNumber final {
 	private:
 		std::string phone_number;
@@ -34,6 +39,11 @@ class PhoneNumber final {
 		PhoneNumber(PhoneNumber&&) = default;
 		PhoneNumber& operator=(PhoneNumber&&) = default;
 
+		/**
+		 * @brief Set the phone number. The number will be normalized to (something like) E.164 format.
+		 * 
+		 * @param number The phone number to set.
+		 */
 		void setNumber(std::string_view number) { phone_number = normalize(number); }
 		std::string_view getNumber() const { return phone_number; }
 		void setName(std::string_view name) { friendly_name = name; }
@@ -67,6 +77,103 @@ class PhoneNumber final {
 				return std::hash<std::string>()(number.phone_number);
 			}
 		};
+};
+
+/**
+ * @brief A class representing a text message to be sent via Twilio
+ * All messages are normalized to GSM 03.38 character set, and have a maximum length of 1600 characters (per Twilio's API rules).
+ */
+class TextMessage final {
+	private:
+		std::u8string message_body;
+		std::size_t length_in_characters = 0;
+		std::string picture_url;
+
+		/**
+		 * @brief Normalizes the message body to GSM 03.38 character set.
+		 *
+		 * Non GSM characters are replaced with their GSM equivalents if they exist, or removed entirely if they do not.
+		 * 
+		 * @param message_body The message body to normalize.
+		 * @return std::u8string The normalized message body.
+		 */
+		static std::u8string normalizeMessageBody(std::u8string_view message_body);
+
+		/**
+		 * @brief Extracts UTF-8 characters from a string view.
+		 * Each element of the returned vector is a single UTF-8 character, which may be 1 to 4 bytes long.
+		 * 
+		 * @return std::vector<std::u8string_view> 
+		 */
+		static std::vector<std::u8string_view> extractUTF8Characters(std::u8string_view);
+
+		// Valid characters in the GSM 03.38 character set, which is used for SMS messages.
+		// Presence of characters outside of this set can multiply message cost by 3 or more.
+		static constexpr std::array<std::u8string_view, 127> valid_gsm_characters = {
+			u8"@", u8"£", u8"$", u8"¥",  u8"è", u8"é", u8"ù", u8"ì", u8"ò", u8"Ç",
+			u8"\n",u8"Ø", u8"ø", u8"\r", u8"Å", u8"å", u8"Δ", u8"_", u8"Φ", u8"Γ",
+			u8"Λ", u8"Ω", u8"Π", u8"Ψ",  u8"Σ", u8"Θ", u8"Ξ",
+			u8"Æ", u8"æ", u8"ß", u8"É",  u8" ", u8"!", u8"\"",
+			u8"#", u8"¤", u8"%", u8"&",  u8"'", u8"(", u8")", u8"*", u8"+", u8",",
+			u8"-", u8".", u8"/", u8"0",  u8"1", u8"2", u8"3", u8"4", u8"5", u8"6", u8"7", u8"8", u8"9",
+			u8":", u8";", u8"<", u8"=",  u8">", u8"?", u8"¡", u8"A", u8"B", u8"C", u8"D", u8"E", u8"F",
+			u8"G", u8"H", u8"I", u8"J",  u8"K", u8"L", u8"M", u8"N", u8"O", u8"P", u8"Q", u8"R", u8"S",
+			u8"T", u8"U", u8"V", u8"W",  u8"X", u8"Y", u8"Z", u8"Ä", u8"Ö", u8"Ñ", u8"Ü", u8"§",
+			u8"¿", u8"a", u8"b", u8"c",  u8"d", u8"e", u8"f", u8"g", u8"h", u8"i", u8"j", u8"k", u8"l",
+			u8"m", u8"n", u8"o", u8"p",  u8"q", u8"r", u8"s", u8"t", u8"u", u8"v", u8"w", u8"x", u8"y",
+			u8"z", u8"ä", u8"ö", u8"ñ",  u8"ü", u8"à"
+		};
+
+		// Non-GSM characters which have GSM equivalents, and their replacements.
+		// If a non-GSM character is found in a message body, it will be replaced with its GSM equivalent if one exists, or removed entirely if not.
+		// See: https://en.wikipedia.org/wiki/GSM_03.38 for more information on the GSM character set
+		static constexpr std::array<std::pair<std::u8string_view, std::u8string_view>, 22> nongsm_to_gsm_equivalent = {
+			std::make_pair(u8"“", u8"\""),
+			std::make_pair(u8"”", u8"\""),
+			std::make_pair(u8"‘", u8"'"),
+			std::make_pair(u8"’", u8"'"),
+			std::make_pair(u8"–", u8"-"),
+			std::make_pair(u8"—", u8"-"),
+			std::make_pair(u8"…", u8"..."),
+			std::make_pair(u8"€", u8"E"),
+			std::make_pair(u8"•", u8"*"),
+			std::make_pair(u8"~", u8"-"),
+			std::make_pair(u8"¬", u8"-"),
+			std::make_pair(u8"©", u8"(c)"),
+			std::make_pair(u8"®", u8"(R)"),
+			std::make_pair(u8"™", u8"(TM)"),
+			std::make_pair(u8"°", u8"o"),
+			std::make_pair(u8"²", u8"2"),
+			std::make_pair(u8"³", u8"3"),
+			std::make_pair(u8"¼", u8"1/4"),
+			std::make_pair(u8"½", u8"1/2"),
+			std::make_pair(u8"¾", u8"3/4"),
+			std::make_pair(u8"×", u8"x"),
+			std::make_pair(u8"÷", u8"/")
+		};
+	public:
+		TextMessage() = default;
+		TextMessage(std::u8string_view message_body_in, std::string_view picture_url_in = "") :
+			message_body(normalizeMessageBody(message_body_in)),
+			length_in_characters(extractUTF8Characters(message_body).size()),
+			picture_url(picture_url_in) {}
+
+		~TextMessage() = default;
+		TextMessage(const TextMessage&) = default;
+		TextMessage& operator=(const TextMessage&) = default;
+		TextMessage(TextMessage&&) = default;
+		TextMessage& operator=(TextMessage&&) = default;
+
+		void setMessageBody(std::u8string_view message_body_in) {
+			message_body = normalizeMessageBody(message_body_in);
+			length_in_characters = extractUTF8Characters(message_body).size();
+		}
+		std::u8string_view getMessageBody() const { return message_body; }
+		std::size_t getLengthInCharacters() const { return length_in_characters; }
+		void setPictureURL(std::string_view picture_url_in) { picture_url = picture_url_in; }
+		std::string_view getPictureURL() const { return picture_url; }
+
+		TenThousandthOfADollar getCostPerRecipient() const;
 };
 
 using TwilioResult = OperationResult;
@@ -145,13 +252,11 @@ class Twilio final {
 		 * 
 		 * @param to_number The phone number to send the message to.
 		 * @param message_body The body of the message.
-		 * @param picture_url The URL of the picture to include in the message (optional).
 		 * @return TwilioResult The result of the operation.
 		 */
 		TwilioResult sendMessage(
 			const PhoneNumber& to_number,
-			const std::u8string& message_body,
-			const std::string& picture_url = ""
+			const TextMessage& message_body
 		);
 
 		/**
@@ -192,76 +297,6 @@ class Twilio final {
 		 * @return true if the API is reachable, false otherwise.
 		 */
 		static bool canConnect();
-
-		/**
-		 * @brief Approximate the cost of sending a message based on its length and Twilio's pricing rules.
-		 * 
-		 * @param message_body The body of the message to be sent.
-		 * @return TenThousandthOfADollar The cost of sending the message in ten-thousandths of a dollar (e.g. 83 = $0.0083).
-		 */
-		static TenThousandthOfADollar getMessageCost(std::u8string_view message_body);
-
-		/**
-		 * @brief Normalize a message body to ensure it only contains valid GSM characters, replacing or removing invalid characters as necessary.
-		 * 
-		 * @param message_body The message body to normalize.
-		 * @return std::u8string The normalized message body containing only valid GSM characters.
-		 */
-		static std::u8string normalizeMessageBody(std::u8string_view message_body);
-
-		/**
-		 * @brief Extract individual UTF-8 characters from a message body, returning them as a vector of strings.
-		 * Each UTF-8 character is represented as a separate string in the vector.
-		 * 
-		 * @param message_body The message body from which to extract UTF-8 characters.
-		 * @return std::vector<std::u8string> A vector containing each UTF-8 character as a separate string.
-		 */
-		static std::vector<std::u8string_view> extractUTF8Characters(std::u8string_view message_body);
-
-		// Valid characters in the GSM 03.38 character set, which is used for SMS messages.
-		// Presence of characters outside of this set can multiply message cost by 3 or more.
-		static constexpr std::array<std::u8string_view, 127> valid_gsm_characters = {
-			u8"@", u8"£", u8"$", u8"¥",  u8"è", u8"é", u8"ù", u8"ì", u8"ò", u8"Ç",
-			u8"\n",u8"Ø", u8"ø", u8"\r", u8"Å", u8"å", u8"Δ", u8"_", u8"Φ", u8"Γ",
-			u8"Λ", u8"Ω", u8"Π", u8"Ψ",  u8"Σ", u8"Θ", u8"Ξ",
-			u8"Æ", u8"æ", u8"ß", u8"É",  u8" ", u8"!", u8"\"",
-			u8"#", u8"¤", u8"%", u8"&",  u8"'", u8"(", u8")", u8"*", u8"+", u8",",
-			u8"-", u8".", u8"/", u8"0",  u8"1", u8"2", u8"3", u8"4", u8"5", u8"6", u8"7", u8"8", u8"9",
-			u8":", u8";", u8"<", u8"=",  u8">", u8"?", u8"¡", u8"A", u8"B", u8"C", u8"D", u8"E", u8"F",
-			u8"G", u8"H", u8"I", u8"J",  u8"K", u8"L", u8"M", u8"N", u8"O", u8"P", u8"Q", u8"R", u8"S",
-			u8"T", u8"U", u8"V", u8"W",  u8"X", u8"Y", u8"Z", u8"Ä", u8"Ö", u8"Ñ", u8"Ü", u8"§",
-			u8"¿", u8"a", u8"b", u8"c",  u8"d", u8"e", u8"f", u8"g", u8"h", u8"i", u8"j", u8"k", u8"l",
-			u8"m", u8"n", u8"o", u8"p",  u8"q", u8"r", u8"s", u8"t", u8"u", u8"v", u8"w", u8"x", u8"y",
-			u8"z", u8"ä", u8"ö", u8"ñ",  u8"ü", u8"à"
-		};
-
-		// Non-GSM characters which have GSM equivalents, and their replacements.
-		// If a non-GSM character is found in a message body, it will be replaced with its GSM equivalent if one exists, or removed entirely if not.
-		// See: https://en.wikipedia.org/wiki/GSM_03.38 for more information on the GSM character set
-		static constexpr std::array<std::pair<std::u8string_view, std::u8string_view>, 22> nongsm_to_gsm_equivalent = {
-			std::make_pair(u8"“", u8"\""),
-			std::make_pair(u8"”", u8"\""),
-			std::make_pair(u8"‘", u8"'"),
-			std::make_pair(u8"’", u8"'"),
-			std::make_pair(u8"–", u8"-"),
-			std::make_pair(u8"—", u8"-"),
-			std::make_pair(u8"…", u8"..."),
-			std::make_pair(u8"€", u8"E"),
-			std::make_pair(u8"•", u8"*"),
-			std::make_pair(u8"~", u8"-"),
-			std::make_pair(u8"¬", u8"-"),
-			std::make_pair(u8"©", u8"(c)"),
-			std::make_pair(u8"®", u8"(R)"),
-			std::make_pair(u8"™", u8"(TM)"),
-			std::make_pair(u8"°", u8"o"),
-			std::make_pair(u8"²", u8"2"),
-			std::make_pair(u8"³", u8"3"),
-			std::make_pair(u8"¼", u8"1/4"),
-			std::make_pair(u8"½", u8"1/2"),
-			std::make_pair(u8"¾", u8"3/4"),
-			std::make_pair(u8"×", u8"x"),
-			std::make_pair(u8"÷", u8"/")
-		};
 };
 
 } // namespace Siren::Twilio

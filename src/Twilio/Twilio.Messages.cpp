@@ -12,7 +12,7 @@
 
 namespace Siren::Twilio {
 	
-std::u8string Twilio::normalizeMessageBody(std::u8string_view message_body) {
+std::u8string TextMessage::normalizeMessageBody(std::u8string_view message_body) {
 	// Remove all non-GSM characters from the message body
 	// See: https://en.wikipedia.org/wiki/GSM_03.38
 	// The presence of non-GSM characters can multiply message cost by 3 or more
@@ -41,7 +41,7 @@ std::u8string Twilio::normalizeMessageBody(std::u8string_view message_body) {
 	return normalized;
 }
 
-std::vector<std::u8string_view> Twilio::extractUTF8Characters(std::u8string_view message_body) {
+std::vector<std::u8string_view> TextMessage::extractUTF8Characters(std::u8string_view message_body) {
 	std::vector<std::u8string_view> utf8_characters;
 	for (std::size_t i = 0; i < message_body.size(); ) {
 		unsigned char c = message_body[i];
@@ -70,7 +70,7 @@ std::vector<std::u8string_view> Twilio::extractUTF8Characters(std::u8string_view
 	return utf8_characters;
 }
 
-TenThousandthOfADollar Twilio::getMessageCost(std::u8string_view message_body) {
+TenThousandthOfADollar TextMessage::getCostPerRecipient() const {
 	// Calculate the cost of sending a message based on its length
 	// We assume that the message body has already been normalized to GSM characters
 
@@ -96,21 +96,13 @@ TenThousandthOfADollar Twilio::getMessageCost(std::u8string_view message_body) {
 
 TwilioResult Twilio::sendMessage(
 	const PhoneNumber& to_number,
-	const std::u8string& message_body,
-	const std::string& picture_url
+	const TextMessage& message_body
 ) {
 	// Send a message via the Twilio API
-
-	// Normalize the message body
-	std::u8string normalized_message_body = normalizeMessageBody(message_body);
-
-	{
-		const auto utf8_characters = extractUTF8Characters(normalized_message_body);
-		if (utf8_characters.size() > 1600) {
-			TwilioResult response;
-			response.setError("Message body must have 1600 or fewer characters. Cannot send message with " + std::to_string(utf8_characters.size()) + " characters.");
-			return response;
-		}
+	if (message_body.getLengthInCharacters() > 1600) {
+		TwilioResult response;
+		response.setError("Message body exceeds maximum length of 1600 characters.");
+		return response;
 	}
 
 	// Escape the message body for URL encoding
@@ -120,7 +112,11 @@ TwilioResult Twilio::sendMessage(
 		response.setError("Failed to initialize CURL for message sending.");
 		return response;
 	}
-	char* escaped_message_body = curl_easy_escape(curl, reinterpret_cast<const char*>(normalized_message_body.c_str()), 0);
+	char* escaped_message_body = curl_easy_escape(
+		curl,
+		reinterpret_cast<const char*>(message_body.getMessageBody().data()),
+		static_cast<int>(message_body.getMessageBody().size())
+	);
 	if (!escaped_message_body) {
 		curl_easy_cleanup(curl);
 		TwilioResult response;
@@ -129,8 +125,12 @@ TwilioResult Twilio::sendMessage(
 	}
 
 	char* escaped_picture_url = nullptr;
-	if (!picture_url.empty()) {
-		escaped_picture_url = curl_easy_escape(curl, picture_url.c_str(), 0);
+	if (!message_body.getPictureURL().empty()) {
+		escaped_picture_url = curl_easy_escape(
+			curl,
+			message_body.getPictureURL().data(),
+			static_cast<int>(message_body.getPictureURL().size())
+		);
 		if (!escaped_picture_url) {
 			curl_easy_cleanup(curl);
 			curl_free(escaped_message_body);

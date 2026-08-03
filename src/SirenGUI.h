@@ -130,8 +130,8 @@ class MainWindow : public wxFrame {
 		 */
 		void updateDisplayedCost() {
 			// 1. Calculate the cost per recipient based on the length of the message (MainWindow::calculateCostPerRecipient)
-			std::u8string_view message_body_utf8 = reinterpret_cast<const char8_t*>(MessageBox->GetValue().ToUTF8().data());
-			costPerRecipient = Twilio::Twilio::getMessageCost(message_body_utf8);
+			Twilio::TextMessage message(reinterpret_cast<const char8_t*>(MessageBox->GetValue().ToUTF8().data()));
+			costPerRecipient = message.getCostPerRecipient();
 
 			// 2. Count the number of lines in the phone numbers input box (each line is a recipient)
 			std::string phone_numbers_text = PhoneNumbersInputBox->GetValue().ToStdString();

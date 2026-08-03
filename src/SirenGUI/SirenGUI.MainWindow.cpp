@@ -176,9 +176,8 @@ MainWindow::MainWindow(
 	// 2. Update the displayed cost per recipient and total cost in the GUI (MainWindow::updateDisplayedCost)
 	MessageBox->Bind(wxEVT_TEXT, [this](wxCommandEvent& /*event*/) {
 		const wxString& current_value = MessageBox->GetValue();
-		const std::u8string message_body_utf8 = reinterpret_cast<const char8_t*>(current_value.ToUTF8().data());
-		std::u8string normalized_message_body = Twilio::Twilio::normalizeMessageBody(message_body_utf8);
-		const wxString normalized_value = wxString::FromUTF8(reinterpret_cast<const char*>(normalized_message_body.c_str()));
+		Twilio::TextMessage message(reinterpret_cast<const char8_t*>(current_value.ToUTF8().data()));
+		const wxString normalized_value = wxString::FromUTF8(reinterpret_cast<const char*>(message.getMessageBody().data()), message.getMessageBody().size());
 		if (normalized_value != current_value) {
 			std::int64_t selection_start = 0;
 			std::int64_t selection_end = 0;

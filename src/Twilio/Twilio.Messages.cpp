@@ -99,11 +99,16 @@ TwilioResult Twilio::sendMessage(
 	const TextMessage& message_body
 ) {
 	// Send a message via the Twilio API
+
+
 	if (message_body.getLengthInCharacters() > 1600) {
 		TwilioResult response;
 		response.setError("Message body exceeds maximum length of 1600 characters.");
 		return response;
 	}
+
+	// Append "\n(stop=quit)" to the message body, as required by law
+	std::u8string full_message_body = std::u8string(message_body.getMessageBody()) + u8"\n(stop=quit)";
 
 	// Escape the message body for URL encoding
 	CURL* curl = curl_easy_init();
@@ -114,8 +119,8 @@ TwilioResult Twilio::sendMessage(
 	}
 	char* escaped_message_body = curl_easy_escape(
 		curl,
-		reinterpret_cast<const char*>(message_body.getMessageBody().data()),
-		static_cast<int>(message_body.getMessageBody().size())
+		reinterpret_cast<const char*>(full_message_body.data()),
+		static_cast<int>(full_message_body.size())
 	);
 	if (!escaped_message_body) {
 		curl_easy_cleanup(curl);

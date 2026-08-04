@@ -256,7 +256,8 @@ class Twilio final {
 		 */
 		TwilioResult sendMessage(
 			const PhoneNumber& to_number,
-			const TextMessage& message_body
+			const TextMessage& message_body,
+			const std::set<PhoneNumber>& unsubscribed_numbers = {}
 		);
 
 		/**

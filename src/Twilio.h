@@ -183,6 +183,15 @@ class TextMessage final {
 
 using TwilioResult = OperationResult;
 
+template <typename T>
+concept ListOfPhoneNumbers = requires(T t) {
+	{ std::ranges::begin(t) } -> std::same_as<typename T::iterator>;
+	{ std::ranges::end(t) } -> std::same_as<typename T::iterator>;
+	{ *std::ranges::begin(t) } -> std::same_as<PhoneNumber>;
+	// Verify it has the `.contains(T)` method
+	{ t.contains(std::declval<PhoneNumber>()) } -> std::same_as<bool>;
+};
+
 /**
  * @brief A class for interacting with the Twilio API.
  * 
@@ -262,7 +271,13 @@ class Twilio final {
 		TwilioResult sendMessage(
 			const PhoneNumber& to_number,
 			const TextMessage& message_body,
-			const std::set<PhoneNumber>& unsubscribed_numbers = {}
+			const ListOfPhoneNumbers auto&& unsubscribed_numbers = std::set<PhoneNumber>()
+		);
+
+		TwilioResult sendMassMessage(
+			const ListOfPhoneNumbers auto&& to_numbers,
+			const TextMessage& message_body,
+			const ListOfPhoneNumbers auto&& unsubscribed_numbers = std::set<PhoneNumber>()
 		);
 
 		/**

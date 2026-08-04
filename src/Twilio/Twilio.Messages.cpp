@@ -9,6 +9,8 @@
 #include <curl/curl.h>
 
 #include <algorithm>
+#include <thread>
+#include <chrono>
 
 namespace Siren::Twilio {
 	
@@ -98,7 +100,7 @@ TenThousandthOfADollar TextMessage::getCostPerRecipient() const {
 TwilioResult Twilio::sendMessage(
 	const PhoneNumber& to_number,
 	const TextMessage& message_body,
-	const std::set<PhoneNumber>& unsubscribed_numbers
+	const ListOfPhoneNumbers auto&& unsubscribed_numbers
 ) {
 	if (unsubscribed_numbers.contains(to_number)) {
 		TwilioResult response;
@@ -175,12 +177,44 @@ TwilioResult Twilio::sendMessage(
 		auth_token
 	);
 
+	// If we receive a 429 Too Many Requests response, we will employ an "exponential backoff" strategy
+	// Starting with a 1 second delay, we will double the delay each time we receive a 429 response, up to a maximum of 16 seconds
+	// After 5 attempts, we will give up and return the last response received
+	std::uint8_t attempt = 1;
+	while (response.getHttpStatusCode() == 429 && attempt <= 5) {
+		auto delay = 1u << (attempt - 1); // 1, 2, 4, 8, 16 seconds
+		std::this_thread::sleep_for(std::chrono::seconds(delay));
+		response = getWebConnector().sendPOSTRequest(
+			"https://api.twilio.com/2010-04-01/Accounts/" + account_sid + "/Messages.json",
+			post_data,
+			account_sid,
+			auth_token
+		);
+		attempt++;
+	}
+
 	curl_free(escaped_message_body);
 	if (escaped_picture_url != nullptr) curl_free(escaped_picture_url);
 
 	// "Slicing object from WebResult to OperationResult discards xx bytes of state"
 	// Yes, but those bytes (the derived class's members) are not needed by the caller.
 	return response; // NOLINT(cppcoreguidelines-slicing)
+}
+
+TwilioResult Twilio::sendMassMessage(
+	const ListOfPhoneNumbers auto&& to_numbers,
+	const TextMessage& message_body,
+	const ListOfPhoneNumbers auto&& unsubscribed_numbers
+) {
+	TwilioResult final_result;
+	std::string concatenated_error_message;
+	for (const auto& to_number : to_numbers) {
+		auto result = sendMessage(to_number, message_body, unsubscribed_numbers);
+		if (!result.success()) concatenated_error_message += std::string(to_number.getNumber()) + ": " + result.getError() + "\n";
+	}
+
+	final_result.setError(concatenated_error_message);
+	return final_result;
 }
 
 } // namespace Siren::Twilio

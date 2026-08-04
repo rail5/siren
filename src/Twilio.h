@@ -89,6 +89,7 @@ class TextMessage final {
 		std::size_t length_in_characters = 0;
 		std::string picture_url;
 
+	public:
 		/**
 		 * @brief Normalizes the message body to GSM 03.38 character set.
 		 *
@@ -151,7 +152,7 @@ class TextMessage final {
 			std::make_pair(u8"×", u8"x"),
 			std::make_pair(u8"÷", u8"/")
 		};
-	public:
+
 		TextMessage() = default;
 		TextMessage(std::u8string_view message_body_in, std::string_view picture_url_in = "") :
 			picture_url(picture_url_in)

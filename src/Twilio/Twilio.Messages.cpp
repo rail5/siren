@@ -106,14 +106,24 @@ TwilioResult Twilio::sendMessage(
 		return response;
 	}
 
-	if (message_body.getLengthInCharacters() >= 1587) { // + "\n(stop=quit)" = 1600 total
-		TwilioResult response;
-		response.setError("Message body exceeds maximum length of 1600 characters.");
-		return response;
-	}
-
 	// Append "\n(stop=quit)" to the message body, as required by law
 	std::u8string full_message_body = std::u8string(message_body.getMessageBody()) + u8"\n(stop=quit)";
+
+	// Replace all occurrences of `$name` in full_message_body with to_number.getName()
+	const std::u8string name(reinterpret_cast<const char8_t*>(to_number.getName().data()), to_number.getName().size());
+	while (true) {
+		const auto pos = full_message_body.find(u8"$name");
+		if (pos == std::u8string::npos) break;
+		full_message_body.replace(pos, 5, name);
+	}
+
+	// Verify that the full (expanded) message doesn't exceed 1600 characters (Twilio's maximum message length)
+	const auto expanded_length = TextMessage::extractUTF8Characters(full_message_body).size();
+	if (expanded_length > 1600) {
+		TwilioResult response;
+		response.setError("The message body exceeds the maximum length of 1600 characters after expansion.");
+		return response;
+	}
 
 	// Escape the message body for URL encoding
 	CURL* curl = curl_easy_init();

@@ -304,10 +304,32 @@ MainWindow::MainWindow(
 
 	// SendButton callback: when clicked, open a MessageSendingProgressWindow and send the messages in a background thread
 	SendButton->Bind(wxEVT_BUTTON, [this](wxCommandEvent& /*event*/) {
-		auto* progress_window = new MessageSendingProgressWindow(this);
+		auto cancel_flag = std::make_shared<std::atomic<bool>>(false);
+		auto* progress_window = new MessageSendingProgressWindow(this, cancel_flag);
+		const Twilio::TextMessage message(reinterpret_cast<const char8_t*>(MessageBox->GetValue().ToUTF8().data()));
+		const auto recipients = getRecipientsFromInputBox();
+		std::thread([this, progress_window, cancel_flag, message, recipients]() {
+			waitForUnsubscribedNumbers();
+			const auto unsubscribed_numbers = getUnsubscribedNumbers();
+			const auto result = twilioClient.sendMassMessage(
+				recipients,
+				message,
+				unsubscribed_numbers,
+				cancel_flag,
+				[progress_window](std::uint8_t percentage) {
+					if (progress_window) progress_window->CallAfter([progress_window, percentage]() {
+						progress_window->updateProgress(percentage);
+					});
+				},
+				[progress_window]() {
+					if (progress_window) progress_window->CallAfter([progress_window]() {
+						progress_window->notifyCancelled();
+					});
+				}
+			);
+		}).detach();
 		progress_window->ShowModal();
 		progress_window->Destroy();
-		//TODO(@rail5): Send the messages in a background thread, and update the progress bar in the progress window
 	});
 
 
@@ -435,6 +457,46 @@ void MainWindow::loadUnsubscribedNumbersAsync() {
 			weak_self->unsubscribedNumbersList.setNumbers(unsubscribed_numbers);
 		});
 	}).detach();
+}
+
+std::set<Twilio::PhoneNumber> MainWindow::getRecipientsFromInputBox() const {
+	std::set<Twilio::PhoneNumber> recipients;
+	const wxString& input_text = PhoneNumbersInputBox->GetValue();
+	// Split the input text into lines
+	std::vector<std::string> lines;
+	std::string current_line;
+	for (const auto& ch : input_text) {
+		if (ch == '\n') {
+			lines.push_back(current_line);
+			current_line.clear();
+		} else {
+			current_line += static_cast<char>(ch);
+		}
+	}
+	lines.push_back(current_line);
+
+	// Split each line into `number{, name}`
+	for (const auto& line : lines) {
+		Twilio::PhoneNumber recipient;
+		const auto comma_pos = line.find(',');
+		if (comma_pos != std::string::npos) {
+			//recipient.setNumber(line.substr(0, comma_pos));
+			const auto number = line.substr(0, comma_pos);
+			// If the 'number' is blank or contains only whitespace, skip this line
+			if (number.find_first_not_of(" \t") == std::string::npos) continue;
+			recipient.setNumber(number);
+			// Skip any whitespace after the comma for the name
+			const auto name_start = line.find_first_not_of(" \t", comma_pos + 1);
+			if (name_start != std::string::npos) recipient.setName(line.substr(name_start));
+		} else {
+			if (line.find_first_not_of(" \t") == std::string::npos) continue; // Skip blank lines
+			recipient.setNumber(line);
+		}
+
+		recipients.insert(recipient); // Implicitly skips duplicates due to being a std::set
+	}
+
+	return recipients;
 }
 
 } // namespace Siren::GUI

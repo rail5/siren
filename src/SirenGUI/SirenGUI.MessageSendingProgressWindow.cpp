@@ -9,18 +9,22 @@
 
 #include "../SirenGUI.h"
 
+#include <wx/event.h>
+#include <wx/msgdlg.h>
+
 namespace Siren::GUI {
 
 MessageSendingProgressWindow::MessageSendingProgressWindow(
 	wxWindow* parent,
+	std::shared_ptr<std::atomic<bool>> cancel_flag,
 	wxWindowID id,
 	const wxString& title,
 	const wxPoint& pos,
 	const wxSize& size,
 	std::int64_t style
 ) : wxDialog(
-	parent, id, title, pos, size, style
-) {
+	parent, id, title, pos, size, style), cancelFlag(cancel_flag)
+{
 	this->SetSizeHints(wxDefaultSize, wxDefaultSize);
 
 	auto* Container = new wxBoxSizer(wxVERTICAL);
@@ -55,14 +59,44 @@ MessageSendingProgressWindow::MessageSendingProgressWindow(
 
 	// Callback for when the user clicks the "Cancel" button
 	CancelButton->Bind(wxEVT_BUTTON, [this](wxCommandEvent& /*event*/) {
-		// Close the dialog
-		//TODO(@rail5): Cancel the sending of messages in the background thread
-		this->EndModal(wxID_CANCEL);
+		// Trip the cancel flag to tell the message sender to quit
+		if (cancelFlag) cancelFlag->store(true);
+		// Wait for full cancel:
+		// When the user presses the cancel button, we follow this procedure:
+		// 1. Request a cancellation (set cancelFlag to true)
+		// 2. The background thread will notice the cancelFlag and stop sending messages
+		// 3. The background thread will call MessageSendingProgressWindow::notifyCancelled() to say "OK, I've cancelled!"
+		// 4. The notifyCancelled() function will show a message box and close the progress window
+		CancelButton->Disable();
 	});
 
 	this->SetSizerAndFit(Container);
 	this->Layout();
 	this->Centre(wxBOTH);
+}
+
+void MessageSendingProgressWindow::updateProgress(std::uint8_t percentage) {
+	if (percentage > 100) percentage = 100;
+	ProgressBar->SetValue(percentage);
+
+	// If we've reached 100%, show a dialog box that says "Done!" and then close the progress window
+	if (percentage == 100) {
+		wxMessageBox(
+			_("Done!"),
+			_("Done!"),
+			wxOK | wxICON_INFORMATION,
+			this);
+		this->EndModal(wxID_OK);
+	}
+}
+
+void MessageSendingProgressWindow::notifyCancelled() {
+	wxMessageBox(
+		_("Message sending cancelled."),
+		_("Cancelled"),
+		wxOK | wxICON_INFORMATION,
+		this);
+	this->EndModal(wxID_CANCEL);
 }
 
 } // namespace Siren::GUI

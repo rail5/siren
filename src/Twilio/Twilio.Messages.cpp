@@ -100,7 +100,7 @@ TenThousandthOfADollar TextMessage::getCostPerRecipient() const {
 TwilioResult Twilio::sendMessage(
 	const PhoneNumber& to_number,
 	const TextMessage& message_body,
-	const ListOfPhoneNumbers auto&& unsubscribed_numbers
+	const std::set<PhoneNumber>& unsubscribed_numbers
 ) {
 	if (unsubscribed_numbers.contains(to_number)) {
 		TwilioResult response;
@@ -202,15 +202,34 @@ TwilioResult Twilio::sendMessage(
 }
 
 TwilioResult Twilio::sendMassMessage(
-	const ListOfPhoneNumbers auto&& to_numbers,
+	const std::set<PhoneNumber>& to_numbers,
 	const TextMessage& message_body,
-	const ListOfPhoneNumbers auto&& unsubscribed_numbers
+	const std::set<PhoneNumber>& unsubscribed_numbers,
+	std::shared_ptr<std::atomic<bool>> cancel_flag,
+	const std::function<void(std::uint8_t)>& progress_callback,
+	const std::function<void()>& cancellation_callback
 ) {
 	TwilioResult final_result;
 	std::string concatenated_error_message;
+	std::size_t total_recipients = std::ranges::distance(to_numbers);
+	std::size_t current_recipient = 0;
 	for (const auto& to_number : to_numbers) {
+		// Check for cancellation before sending each message
+		if (cancel_flag && cancel_flag->load()) {
+			if (cancellation_callback) cancellation_callback();
+			final_result.setError("Message sending cancelled by user.");
+			return final_result;
+		}
+
+		current_recipient++;
 		auto result = sendMessage(to_number, message_body, unsubscribed_numbers);
+
+		// Concatenate all the error messages together, one per line
 		if (!result.success()) concatenated_error_message += std::string(to_number.getNumber()) + ": " + result.getError() + "\n";
+
+		// Update progress after each message is sent
+		auto progress = static_cast<std::uint8_t>((current_recipient * 100) / total_recipients);
+		if (progress_callback) progress_callback(progress);
 	}
 
 	final_result.setError(concatenated_error_message);

@@ -162,6 +162,8 @@ class MainWindow : public wxFrame {
 
 		void waitForUnsubscribedNumbers() { unsubscribedNumbersList.waitUntilReady(); }
 		std::set<Twilio::PhoneNumber> getUnsubscribedNumbers() { return unsubscribedNumbersList.getNumbers(); }
+
+		std::set<Twilio::PhoneNumber> getRecipientsFromInputBox() const;
 };
 
 /**
@@ -225,13 +227,15 @@ class MessageSendingProgressWindow : public wxDialog {
 		wxGauge* ProgressBar;
 		wxButton* CancelButton;
 
+		std::shared_ptr<std::atomic<bool>> cancelFlag = nullptr;
 	public:
 		MessageSendingProgressWindow(wxWindow* parent,
+			std::shared_ptr<std::atomic<bool>> cancel_flag,
 			wxWindowID id = wxID_ANY,
 			const wxString& title = _("Siren - Sending Messages"),
 			const wxPoint& pos = wxDefaultPosition,
 			const wxSize& size = wxSize(400, 150),
-			std::int64_t style = wxCAPTION|wxSYSTEM_MENU|wxTAB_TRAVERSAL); // No "close" button
+			std::int64_t style = wxCAPTION|wxTAB_TRAVERSAL); // No "close" button
 
 		~MessageSendingProgressWindow() override = default;
 
@@ -240,7 +244,11 @@ class MessageSendingProgressWindow : public wxDialog {
 		MessageSendingProgressWindow(MessageSendingProgressWindow&&) = delete;
 		MessageSendingProgressWindow& operator=(MessageSendingProgressWindow&&) = delete;
 
-		void updateProgress(std::size_t current, std::size_t total);
+		// Called from the background thread to update the progress bar in the GUI thread
+		void updateProgress(std::uint8_t percentage);
+
+		// Called from the background thread to indicate a successful cancellation, which will close the dialog automatically
+		void notifyCancelled();
 };
 
 } // namespace Siren::GUI

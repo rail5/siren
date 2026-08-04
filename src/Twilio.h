@@ -12,6 +12,8 @@
 #include <string_view>
 #include <utility>
 #include <filesystem>
+#include <atomic>
+#include <functional>
 
 #include "Siren.h"
 #include "OperationResult.h"
@@ -183,15 +185,6 @@ class TextMessage final {
 
 using TwilioResult = OperationResult;
 
-template <typename T>
-concept ListOfPhoneNumbers = requires(T t) {
-	{ std::ranges::begin(t) } -> std::same_as<typename T::iterator>;
-	{ std::ranges::end(t) } -> std::same_as<typename T::iterator>;
-	{ *std::ranges::begin(t) } -> std::same_as<PhoneNumber>;
-	// Verify it has the `.contains(T)` method
-	{ t.contains(std::declval<PhoneNumber>()) } -> std::same_as<bool>;
-};
-
 /**
  * @brief A class for interacting with the Twilio API.
  * 
@@ -271,13 +264,18 @@ class Twilio final {
 		TwilioResult sendMessage(
 			const PhoneNumber& to_number,
 			const TextMessage& message_body,
-			const ListOfPhoneNumbers auto&& unsubscribed_numbers = std::set<PhoneNumber>()
+			const std::set<PhoneNumber>& unsubscribed_numbers
 		);
 
 		TwilioResult sendMassMessage(
-			const ListOfPhoneNumbers auto&& to_numbers,
+			const std::set<PhoneNumber>& to_numbers,
 			const TextMessage& message_body,
-			const ListOfPhoneNumbers auto&& unsubscribed_numbers = std::set<PhoneNumber>()
+			const std::set<PhoneNumber>& unsubscribed_numbers,
+			std::shared_ptr<std::atomic<bool>> cancel_flag = nullptr,
+			// Progress callback function, which will be called with the current progress (0-100) as a percentage.
+			const std::function<void(std::uint8_t)>& progress_callback = nullptr,
+			// Cancel callback function, which will be called if the user cancels the operation.
+			const std::function<void()>& cancellation_callback = nullptr
 		);
 
 		/**

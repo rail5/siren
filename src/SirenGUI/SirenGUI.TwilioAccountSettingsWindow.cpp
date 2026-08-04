@@ -98,7 +98,6 @@ TwilioAccountSettingsWindow::TwilioAccountSettingsWindow(
 	}
 
 	CheckSettingsButton = new wxButton(this, wxID_ANY, _("Check settings"), wxDefaultPosition, wxDefaultSize, 0);
-	const auto unsubscribed_numbers = parent_window->getUnsubscribedNumbers();
 
 	// Callback for when the "Check settings" button is clicked:
 	// 1. Get the account ID, auth token, and from number from the input

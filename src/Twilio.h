@@ -95,9 +95,9 @@ class TextMessage final {
 		 * Non GSM characters are replaced with their GSM equivalents if they exist, or removed entirely if they do not.
 		 * 
 		 * @param message_body The message body to normalize.
-		 * @return std::u8string The normalized message body.
+		 * @return std::pair<std::u8string, std::size_t> The normalized message body and its character count.
 		 */
-		static std::u8string normalizeMessageBody(std::u8string_view message_body);
+		static std::pair<std::u8string, std::size_t> normalizeMessageBodyAndCountCharacters(std::u8string_view message_body);
 
 		/**
 		 * @brief Extracts UTF-8 characters from a string view.
@@ -154,9 +154,12 @@ class TextMessage final {
 	public:
 		TextMessage() = default;
 		TextMessage(std::u8string_view message_body_in, std::string_view picture_url_in = "") :
-			message_body(normalizeMessageBody(message_body_in)),
-			length_in_characters(extractUTF8Characters(message_body).size()),
-			picture_url(picture_url_in) {}
+			picture_url(picture_url_in
+		) {
+			const auto [normalized_body, character_count] = normalizeMessageBodyAndCountCharacters(message_body_in);
+			message_body = normalized_body;
+			length_in_characters = character_count;
+		}
 
 		~TextMessage() = default;
 		TextMessage(const TextMessage&) = default;
@@ -165,8 +168,9 @@ class TextMessage final {
 		TextMessage& operator=(TextMessage&&) = default;
 
 		void setMessageBody(std::u8string_view message_body_in) {
-			message_body = normalizeMessageBody(message_body_in);
-			length_in_characters = extractUTF8Characters(message_body).size();
+			const auto [normalized_body, character_count] = normalizeMessageBodyAndCountCharacters(message_body_in);
+			message_body = normalized_body;
+			length_in_characters = character_count;
 		}
 		std::u8string_view getMessageBody() const { return message_body; }
 		std::size_t getLengthInCharacters() const { return length_in_characters; }

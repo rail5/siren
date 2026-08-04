@@ -12,7 +12,7 @@
 
 namespace Siren::Twilio {
 	
-std::u8string TextMessage::normalizeMessageBody(std::u8string_view message_body) {
+std::pair<std::u8string, std::size_t> TextMessage::normalizeMessageBodyAndCountCharacters(std::u8string_view message_body) {
 	// Remove all non-GSM characters from the message body
 	// See: https://en.wikipedia.org/wiki/GSM_03.38
 	// The presence of non-GSM characters can multiply message cost by 3 or more
@@ -20,25 +20,26 @@ std::u8string TextMessage::normalizeMessageBody(std::u8string_view message_body)
 	// Where possible, we will replace non-GSM characters with their GSM equivalents,
 	// but if no equivalent exists, we will remove the character entirely.
 
-	std::u8string normalized;
+	std::pair<std::u8string, std::size_t> result;
 
 	// 1. Collect UTF-8 characters from the message body
 	const auto utf8_characters = extractUTF8Characters(message_body);
+	result.second = utf8_characters.size();
 
 	// 2. For each UTF-8 character, check if it's a GSM character or has a GSM equivalent
 	for (const auto& utf8_char : utf8_characters) {
 		if (std::ranges::contains(valid_gsm_characters, utf8_char)) {
-			normalized += utf8_char;
+			result.first += utf8_char;
 		} else {
 			const auto* it = std::ranges::find_if(nongsm_to_gsm_equivalent, [&utf8_char](const auto& pair) {
 				return pair.first == utf8_char;
 			});
-			if (it != nongsm_to_gsm_equivalent.end()) normalized += it->second;
+			if (it != nongsm_to_gsm_equivalent.end()) result.first += it->second;
 			// If no GSM equivalent exists, we simply skip the character
 		}
 	}
 
-	return normalized;
+	return result;
 }
 
 std::vector<std::u8string_view> TextMessage::extractUTF8Characters(std::u8string_view message_body) {

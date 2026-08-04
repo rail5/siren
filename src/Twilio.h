@@ -154,8 +154,8 @@ class TextMessage final {
 	public:
 		TextMessage() = default;
 		TextMessage(std::u8string_view message_body_in, std::string_view picture_url_in = "") :
-			picture_url(picture_url_in
-		) {
+			picture_url(picture_url_in)
+		{
 			const auto [normalized_body, character_count] = normalizeMessageBodyAndCountCharacters(message_body_in);
 			message_body = normalized_body;
 			length_in_characters = character_count;

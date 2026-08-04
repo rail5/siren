@@ -185,14 +185,49 @@ MainWindow::MainWindow(
 			const auto insertion_point = MessageBox->GetInsertionPoint();
 
 			// Defer the rewrite so GTK can finish processing the paste event first.
-			MessageBox->CallAfter([this, normalized_value, selection_start, selection_end, insertion_point]() {
-				MessageBox->ChangeValue(normalized_value);
-				if (selection_start != selection_end) {
-					MessageBox->SetSelection(selection_start, selection_end);
-				} else {
-					MessageBox->SetInsertionPoint(insertion_point);
-				}
-			});
+			MessageBox->CallAfter([this, normalized_value, selection_start, selection_end, insertion_point, current_value]() {
+					// Map original selection/insertion indices through normalization so
+					// multi-character replacements (e.g. "½" -> "1/2") keep the cursor
+					// at the expected logical position.
+					auto new_sel_start = selection_start;
+					auto new_sel_end = selection_end;
+					auto new_insertion = static_cast<std::int64_t>(insertion_point);
+
+					if (selection_start != selection_end) {
+						// Compute normalized prefix lengths for both selection boundaries
+						wxString prefix_start = current_value.Left(selection_start);
+						Twilio::TextMessage tprefix_start(reinterpret_cast<const char8_t*>(prefix_start.ToUTF8().data()));
+						const wxString normalized_prefix_start = wxString::FromUTF8(
+							reinterpret_cast<const char*>(tprefix_start.getMessageBody().data()),
+							static_cast<std::size_t>(tprefix_start.getMessageBody().size())
+						);
+						new_sel_start = static_cast<std::int64_t>(normalized_prefix_start.Length());
+
+						wxString prefix_end = current_value.Left(selection_end);
+						Twilio::TextMessage tprefix_end(reinterpret_cast<const char8_t*>(prefix_end.ToUTF8().data()));
+						const wxString normalized_prefix_end = wxString::FromUTF8(
+							reinterpret_cast<const char*>(tprefix_end.getMessageBody().data()),
+							static_cast<std::size_t>(tprefix_end.getMessageBody().size())
+						);
+						new_sel_end = static_cast<std::int64_t>(normalized_prefix_end.Length());
+					} else {
+						// Compute normalized prefix length for caret position
+						wxString prefix = current_value.Left(insertion_point);
+						Twilio::TextMessage tprefix(reinterpret_cast<const char8_t*>(prefix.ToUTF8().data()));
+						const wxString normalized_prefix = wxString::FromUTF8(
+							reinterpret_cast<const char*>(tprefix.getMessageBody().data()),
+							static_cast<std::size_t>(tprefix.getMessageBody().size())
+						);
+						new_insertion = static_cast<std::int64_t>(normalized_prefix.Length());
+					}
+
+					MessageBox->ChangeValue(normalized_value);
+					if (selection_start != selection_end) {
+						MessageBox->SetSelection(new_sel_start, new_sel_end);
+					} else {
+						MessageBox->SetInsertionPoint(new_insertion);
+					}
+				});
 		}
 
 		updateDisplayedCost();

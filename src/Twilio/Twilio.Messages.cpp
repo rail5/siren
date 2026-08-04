@@ -105,7 +105,7 @@ TwilioResult Twilio::sendMessage(
 		return response;
 	}
 
-	if (message_body.getLengthInCharacters() > 1600) {
+	if (message_body.getLengthInCharacters() >= 1587) { // + "\n(stop=quit)" = 1600 total
 		TwilioResult response;
 		response.setError("Message body exceeds maximum length of 1600 characters.");
 		return response;

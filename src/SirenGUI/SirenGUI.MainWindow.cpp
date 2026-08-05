@@ -8,7 +8,10 @@
 //NOLINTBEGIN(cppcoreguidelines-owning-memory)
 
 #include "../SirenGUI.h"
-#include "../res/siren.xpm"
+
+#ifndef _WIN32
+	#include "../res/siren.xpm"
+#endif
 
 #include <wx/msgdlg.h>
 #include <wx/utils.h>
@@ -36,10 +39,12 @@ MainWindow::MainWindow(
 		// overriding the operating system's color scheme.
 		// By setting the background color to wxNullColour, we allow the operating system to choose the background color.
 		this->SetBackgroundColour(wxNullColour);
+		// On Windows, the icon is embedded in the executable via the .rc resource file, so no need to set it here.
+	#else
+		// On non-Windows platforms, set the icon from the XPM data.
+		wxIcon icon(siren_xpm.data());
+		this->SetIcon(icon);
 	#endif
-
-	wxIcon icon(siren_xpm.data());
-	this->SetIcon(icon);
 
 	//NOLINTBEGIN(cppcoreguidelines-prefer-member-initializer)
 	MainMenuBar = new wxMenuBar(0);

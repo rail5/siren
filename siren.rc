@@ -1,0 +1,6 @@
+// Windows Resource Script for Siren
+// This file associates the application icon with the executable on Windows
+
+#include <windows.h>
+
+a ICON "siren.ico"

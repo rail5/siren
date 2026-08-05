@@ -83,4 +83,30 @@ Once you've signed in, you can send messages to your recipients, and Siren will 
 
 ## Building
 
-Build instructions coming soon
+### GNU/Linux
+
+### Windows
+
+Requirements:
+
+ - [MSYS2](https://www.msys2.org/)
+   - `mingw-w64-ucrt-x86_64-gcc`
+   - `mingw-w64-ucrt-x86_64-make`
+   - `mingw-w64-ucrt-x86_64-pkgconf`
+   - `mingw-w64-ucrt-x86_64-wxwidgets3.2`
+   - `mingw-w64-ucrt-x86_64-curl`
+   - `mingw-w64-ucrt-x86_64-nlohmann-json`
+ - [Inno Setup 7](https://jrsoftware.org/isdl.php) (optional, if you want to build the installer)
+
+Open the MSYS2 UCRT64 shell, and run the following commands:
+
+```bash
+git clone https://github.com/rail5/siren.git && cd siren
+mingw32-make -j
+```
+
+After this point, `bin/siren.exe` will exist, and you can run it directly.
+
+You can build the installer (if you want) by opening the `siren-installer.iss` file with Inno Setup 7, and clicking "Compile". Afterwards, the installer will be located in `bin/Siren-Installer.exe`.
+
+### macOS

@@ -69,6 +69,12 @@ WebResult WebConnector::sendGETRequest( // NOLINT(readability-convert-member-fun
 	curl_easy_setopt(curl, CURLOPT_HTTPGET, 1);
 	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
 
+	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1L);
+	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 2L);
+	#ifdef _WIN32
+		curl_easy_setopt(curl, CURLOPT_SSL_OPTIONS, CURLSSLOPT_NATIVE_CA);
+	#endif
+
 	if (username.has_value() && password.has_value()) {
 		curl_easy_setopt(curl, CURLOPT_USERNAME, username.value().c_str());
 		curl_easy_setopt(curl, CURLOPT_PASSWORD, password.value().c_str());
@@ -120,6 +126,12 @@ WebResult WebConnector::sendPOSTRequest( // NOLINT(readability-convert-member-fu
 	curl_easy_setopt(curl, CURLOPT_POST, 1);
 	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
 	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post_data.c_str());
+
+	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1L);
+	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 2L);
+	#ifdef _WIN32
+		curl_easy_setopt(curl, CURLOPT_SSL_OPTIONS, CURLSSLOPT_NATIVE_CA);
+	#endif
 
 	if (username.has_value() && password.has_value()) {
 		curl_easy_setopt(curl, CURLOPT_USERNAME, username.value().c_str());

@@ -31,6 +31,13 @@ MainWindow::MainWindow(
 ) {
 	this->SetSizeHints(wxSize(581,437), wxDefaultSize);
 
+	#ifdef _WIN32
+		// For some reason, wxWidgets on windows defaults to an ugly dark-grey background,
+		// overriding the operating system's color scheme.
+		// By setting the background color to wxNullColour, we allow the operating system to choose the background color.
+		this->SetBackgroundColour(wxNullColour);
+	#endif
+
 	wxIcon icon(siren_xpm.data());
 	this->SetIcon(icon);
 
@@ -179,8 +186,8 @@ MainWindow::MainWindow(
 		Twilio::TextMessage message(reinterpret_cast<const char8_t*>(current_value.ToUTF8().data()));
 		const wxString normalized_value = wxString::FromUTF8(reinterpret_cast<const char*>(message.getMessageBody().data()), message.getMessageBody().size());
 		if (normalized_value != current_value) {
-			std::int64_t selection_start = 0;
-			std::int64_t selection_end = 0;
+			long selection_start = 0;
+			long selection_end = 0;
 			MessageBox->GetSelection(&selection_start, &selection_end);
 			const auto insertion_point = MessageBox->GetInsertionPoint();
 

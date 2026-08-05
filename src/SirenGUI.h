@@ -29,6 +29,7 @@
 #include "Twilio.h"
 
 #include <cstdint>
+#include <chrono>
 #include <condition_variable>
 #include <set>
 #include <string>
@@ -95,6 +96,19 @@ class MainWindow : public wxFrame {
 					condition_variable.wait(lock, [this]() {
 						return ready.load();
 					});
+				}
+
+				/**
+				 * @brief Waits until the list is ready or cancellation is requested.
+				 * @return true if the list became ready, false if cancellation was requested first.
+				 */
+				bool waitUntilReadyOrCancelled(std::shared_ptr<std::atomic<bool>> cancel_flag) {
+					std::unique_lock<std::mutex> lock(mutex);
+					while (!ready.load()) {
+						if (cancel_flag && cancel_flag->load()) return false;
+						condition_variable.wait_for(lock, std::chrono::milliseconds(100));
+					}
+					return true;
 				}
 		} unsubscribedNumbersList;
 	protected:

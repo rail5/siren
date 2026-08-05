@@ -316,7 +316,12 @@ MainWindow::MainWindow(
 		const Twilio::TextMessage message(reinterpret_cast<const char8_t*>(MessageBox->GetValue().ToUTF8().data()));
 		const auto recipients = getRecipientsFromInputBox();
 		std::thread([this, progress_window, cancel_flag, message, recipients]() {
-			waitForUnsubscribedNumbers();
+			if (!unsubscribedNumbersList.waitUntilReadyOrCancelled(cancel_flag)) {
+				if (progress_window) progress_window->CallAfter([progress_window]() {
+					progress_window->notifyCancelled();
+				});
+				return;
+			}
 			const auto unsubscribed_numbers = getUnsubscribedNumbers();
 			const auto result = twilioClient.sendMassMessage(
 				recipients,

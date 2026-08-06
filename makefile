@@ -66,27 +66,98 @@ macpkg: $(TARGET)
 	APP="bin/macos/Siren.app"; \
 	APP_BIN="$$APP/Contents/MacOS/siren"; \
 	FW_DIR="$$APP/Contents/Frameworks"; \
-	get_non_system_deps() { \
-		otool -L "$$1" | awk 'NR > 1 {print $$1}' | grep -E '^(/opt/homebrew|/usr/local|/opt/local)/' || true; \
+	resolve_dep_path() { \
+		dep="$$1"; \
+		case "$$dep" in \
+			/System/Library/*|/usr/lib/*|/usr/libexec/*|/Library/Frameworks/*|/System/Library/Frameworks/*) \
+				return 0; \
+				;; \
+			@rpath/*|@loader_path/*|@executable_path/*) \
+				dep_name="$$dep"; \
+				case "$$dep_name" in \
+					@rpath/*) dep_name="$${dep_name#@rpath/}" ;; \
+					@loader_path/*) dep_name="$${dep_name#@loader_path/}" ;; \
+					@executable_path/*) dep_name="$${dep_name#@executable_path/}" ;; \
+				esac; \
+				dep_name="$$(basename "$$dep_name")"; \
+				;; \
+			/*) \
+				printf '%s\n' "$$dep"; \
+				return 0; \
+				;; \
+			*) \
+				dep_name="$$(basename "$$dep")"; \
+				;; \
+			esac; \
+		for prefix in /opt/homebrew /usr/local /opt/local; do \
+			if [ -d "$$prefix" ]; then \
+				found="$$(find -L "$$prefix" \( -type f -o -type l \) -name "$$dep_name" 2>/dev/null | head -n 1)"; \
+				if [ -n "$$found" ]; then \
+					printf '%s\n' "$$found"; \
+					return 0; \
+				fi; \
+				stem="$${dep_name%.dylib}"; \
+				if [ "$$stem" != "$$dep_name" ]; then \
+					found="$$(find -L "$$prefix" \( -type f -o -type l \) -name "$$stem*.dylib" 2>/dev/null | head -n 1)"; \
+					if [ -n "$$found" ]; then \
+						printf '%s\n' "$$found"; \
+						return 0; \
+					fi; \
+				fi; \
+			fi; \
+		done; \
 	}; \
-	for dep in $$(get_non_system_deps "$$APP_BIN"); do \
-		base="$$(basename "$$dep")"; \
-		if [ ! -f "$$FW_DIR/$$base" ]; then \
-			cp -f "$$dep" "$$FW_DIR/$$base"; \
-			chmod u+w "$$FW_DIR/$$base"; \
-		fi; \
-	done; \
-	changed=1; \
-	while [ $$changed -eq 1 ]; do \
-		changed=0; \
-		for dylib in "$$FW_DIR"/*.dylib; do \
-			[ -e "$$dylib" ] || continue; \
-			for dep in $$(get_non_system_deps "$$dylib"); do \
-				base="$$(basename "$$dep")"; \
-				if [ ! -f "$$FW_DIR/$$base" ]; then \
-					cp -f "$$dep" "$$FW_DIR/$$base"; \
-					chmod u+w "$$FW_DIR/$$base"; \
-					changed=1; \
+	get_non_system_deps() { \
+		target="$$1"; \
+		otool -L "$$target" | awk 'NR > 1 {print $$1}' | while IFS= read -r dep; do \
+			case "$$dep" in \
+				/System/Library/*|/usr/lib/*|/usr/libexec/*|/Library/Frameworks/*|/System/Library/Frameworks/*) \
+					continue; \
+					;; \
+				@rpath/*|@loader_path/*|@executable_path/*) \
+					dep_name="$$dep"; \
+					case "$$dep_name" in \
+						@rpath/*) dep_name="$${dep_name#@rpath/}" ;; \
+						@loader_path/*) dep_name="$${dep_name#@loader_path/}" ;; \
+						@executable_path/*) dep_name="$${dep_name#@executable_path/}" ;; \
+					esac; \
+					dep_name="$$(basename "$$dep_name")"; \
+					;; \
+				*) \
+					dep_name="$$(basename "$$dep")"; \
+					;; \
+				esac; \
+			resolved="$$(resolve_dep_path "$$dep")"; \
+			if [ -n "$$resolved" ]; then \
+				printf '%s\n' "$$dep"; \
+			fi; \
+		done; \
+	}; \
+	pending="$$APP_BIN"; \
+	seen=""; \
+	while [ -n "$$pending" ]; do \
+		set -- $$pending; \
+		pending=""; \
+		for target in "$$@"; do \
+			target_base="$$(basename "$$target")"; \
+			case " $$seen " in \
+				*" $$target_base "*) continue ;; \
+			esac; \
+			seen="$$seen $$target_base"; \
+			for dep in $$(get_non_system_deps "$$target"); do \
+				dep_name="$$(basename "$$dep")"; \
+				case "$$dep_name" in \
+					@rpath/*) dep_name="$${dep_name#@rpath/}" ;; \
+					@loader_path/*) dep_name="$${dep_name#@loader_path/}" ;; \
+					@executable_path/*) dep_name="$${dep_name#@executable_path/}" ;; \
+					esac; \
+				resolved="$$(resolve_dep_path "$$dep")"; \
+				if [ -n "$$resolved" ]; then \
+					if [ ! -f "$$FW_DIR/$$dep_name" ]; then \
+						cp -f "$$resolved" "$$FW_DIR/$$dep_name"; \
+						chmod u+w "$$FW_DIR/$$dep_name"; \
+					fi; \
+					pending="$$pending $$FW_DIR/$$dep_name"; \
 				fi; \
 			done; \
 		done; \
@@ -95,14 +166,20 @@ macpkg: $(TARGET)
 	for dylib in "$$FW_DIR"/*.dylib; do \
 		[ -e "$$dylib" ] || continue; \
 		base="$$(basename "$$dylib")"; \
+		install_name_tool -add_rpath "@loader_path" "$$dylib" 2>/dev/null || true; \
 		install_name_tool -id "@rpath/$$base" "$$dylib"; \
 	done; \
 	for target in "$$APP_BIN" "$$FW_DIR"/*.dylib; do \
 		[ -e "$$target" ] || continue; \
 		for dep in $$(get_non_system_deps "$$target"); do \
-			base="$$(basename "$$dep")"; \
-			if [ -f "$$FW_DIR/$$base" ]; then \
-				install_name_tool -change "$$dep" "@rpath/$$base" "$$target"; \
+			dep_name="$$(basename "$$dep")"; \
+			case "$$dep_name" in \
+				@rpath/*) dep_name="$${dep_name#@rpath/}" ;; \
+				@loader_path/*) dep_name="$${dep_name#@loader_path/}" ;; \
+				@executable_path/*) dep_name="$${dep_name#@executable_path/}" ;; \
+				esac; \
+			if [ -f "$$FW_DIR/$$dep_name" ]; then \
+				install_name_tool -change "$$dep" "@rpath/$$dep_name" "$$target"; \
 			fi; \
 		done; \
 	done

@@ -44,8 +44,6 @@ Enter the list of phone numbers, one per line, in the right-hand box. Enter the 
 - Siren will also silently refuse to send messages to duplicate phone numbers
   - If the same number appears multiple times in your list, it will only be sent to once.
 
-- Sending may take a while, as Siren must delay for a few seconds between each message to comply with Twilio's rate limits.
-
 **USEFUL TIPS**:
 
 - The estimated cost-per-recipient and total cost are displayed at the bottom of the window.

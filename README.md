@@ -85,6 +85,20 @@ Once you've signed in, you can send messages to your recipients, and Siren will 
 
 ### GNU/Linux
 
+Requirements:
+
+ - `make`
+ - `g++`
+ - `pkg-config`
+ - `nlohmann-json3-dev`
+ - `libcurl4-openssl-dev`
+ - `libwxgtk3.2-dev`
+ - `debhelper` (optional, if you want to build the .deb package)
+
+From the source tree, just run `make -j` to build the binary. The binary will be located in `bin/siren`.
+
+If you want to build the Debian package, run `debuild -us -uc` from the source tree. The .deb package will be located in the parent directory.
+
 ### Windows
 
 Requirements:

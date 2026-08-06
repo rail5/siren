@@ -1,3 +1,25 @@
+siren (0.12.0) unstable; urgency=medium
+
+  * MAJOR CHANGES:
+    - Message sending is now MUCH faster
+    - Application starts quicker
+    - Bug fix: illegal characters in messages caused silent failures
+    - New: refuse to send to duplicate phone numbers
+    - New: verify that the "from" phone number is associated with the account
+  * Technical details:
+    - Complete rewrite from C++/Pascal to pure C++ with wxWidgets
+    - Updated config file format to simple JSON
+    - Normalize messages LIVE (in-window) to the GSM character set
+    - Sign in to Twilio asynchronously on startup rather than blocking
+      (This is why the application starts instantaneously now)
+    - Normalize phone numbers to E.164 format automatically
+    - Send messages as fast as we can, and employ an exponential backoff if
+      we receive a 429 "too many requests" response from Twilio
+      The old Pascal implementation had an arbitrary wait between messages to
+      avoid hitting Twilio's rate limits: this approach is MUCH faster
+
+ -- rail5 <andrew@rail5.org>  Thu, 06 Aug 2026 10:18:45 +0800
+
 siren (0.11) unstable; urgency=medium
 
   * Added help menu item to view unsubscribed and invalid numbers 

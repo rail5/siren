@@ -3,4 +3,4 @@
 
 #include <windows.h>
 
-a ICON "siren.ico"
+1 ICON "siren.ico"

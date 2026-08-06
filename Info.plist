@@ -6,6 +6,8 @@
   <string>English</string>
   <key>CFBundleExecutable</key>
   <string>siren</string>
+  <key>CFBundleIconFile</key>
+  <string>siren.ico</string>
   <key>CFBundleName</key>
   <string>Siren</string>
   <key>CFBundleIdentifier</key>

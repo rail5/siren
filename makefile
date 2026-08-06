@@ -7,6 +7,9 @@ HOST_OS     := $(shell uname)
 BUILDDIR    := bin
 OBJDIR      := $(BUILDDIR)/obj
 SRCDIR      := src
+ICON_SRC    := $(CURDIR)/siren.ico
+RC          ?= windres
+RCFLAGS     ?= --use-temp-file -J rc -O coff
 
 SRCS        := $(shell find $(SRCDIR) -name '*.cpp')
 OBJS        := $(patsubst $(SRCDIR)/%.cpp,$(OBJDIR)/%.o,$(SRCS))
@@ -20,10 +23,14 @@ CXXFLAGS += $(shell wx-config --static --cxxflags)
 LDFLAGS  += $(shell wx-config --static --libs)
 LDFLAGS  += $(shell pkg-config --static --libs libcurl)
 LDFLAGS  += -static-libgcc -static-libstdc++ -static -mwindows
+ifneq ($(strip $(shell command -v $(RC) 2>/dev/null)),)
 RES_SRC  := siren.rc
 RES_OBJ  := $(OBJDIR)/siren.res.o
 OBJS     += $(RES_OBJ)
 else
+$(warning windres not found; skipping embedded Windows icon)
+endif
+ else
 # Standard dynamic linking for GNU/Linux: assume a package manager will handle dependencies
 CXXFLAGS += $(shell pkg-config --cflags libcurl)
 CXXFLAGS += $(shell wx-config --cxxflags)
@@ -42,9 +49,9 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 # Windows resource compilation
-$(RES_OBJ): $(RES_SRC)
+$(RES_OBJ): $(RES_SRC) $(ICON_SRC)
 	@mkdir -p $(dir $@)
-	windres -i $< -o $@
+	$(RC) $(RCFLAGS) -i $< -o $@
 
 .PHONY: macpkg macdmg clean
 macpkg: $(TARGET)
@@ -53,6 +60,7 @@ macpkg: $(TARGET)
 	echo "APPL????" > bin/macos/Siren.app/Contents/PkgInfo
 	cp Info.plist bin/macos/Siren.app/Contents/
 	cp bin/siren bin/macos/Siren.app/Contents/MacOS/
+	cp $(ICON_SRC) bin/macos/Siren.app/Contents/Resources/siren.ico
 
 macdmg: macpkg
 	ln -s /Applications "bin/macos/Drag Siren here"

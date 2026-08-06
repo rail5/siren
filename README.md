@@ -96,6 +96,7 @@ Requirements:
    - `mingw-w64-ucrt-x86_64-wxwidgets3.2`
    - `mingw-w64-ucrt-x86_64-curl`
    - `mingw-w64-ucrt-x86_64-nlohmann-json`
+   - `git`
  - [Inno Setup 7](https://jrsoftware.org/isdl.php) (optional, if you want to build the installer)
 
 Open the MSYS2 UCRT64 shell, and run the following commands:
@@ -110,3 +111,24 @@ After this point, `bin/siren.exe` will exist, and you can run it directly.
 You can build the installer (if you want) by opening the `siren-installer.iss` file with Inno Setup 7, and clicking "Compile". Afterwards, the installer will be located in `bin/Siren-Installer.exe`.
 
 ### macOS
+
+Requirements:
+
+ - [Homebrew](https://brew.sh/)
+   - `wxwidgets`
+   - `curl`
+   - `nlohmann-json`
+   - `pkgconf`
+   - `git`
+
+Open the terminal, and run the following commands:
+
+```bash
+git clone https://github.com/rail5/siren.git && cd siren
+make -j
+make macdmg
+```
+
+After this point, the binary `bin/siren` will exist, and you can run it directly.
+
+The "drag-and-drop" DMG installer will be located in `bin/Siren.dmg`.

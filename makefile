@@ -46,7 +46,20 @@ $(RES_OBJ): $(RES_SRC)
 	@mkdir -p $(dir $@)
 	windres -i $< -o $@
 
-.PHONY: clean
+.PHONY: macpkg macdmg clean
+macpkg: $(TARGET)
+	mkdir -p bin/macos/Siren.app/Contents/MacOS
+	mkdir -p bin/macos/Siren.app/Contents/Resources
+	echo "APPL????" > bin/macos/Siren.app/Contents/PkgInfo
+	cp Info.plist bin/macos/Siren.app/Contents/
+	cp bin/siren bin/macos/Siren.app/Contents/MacOS/
+
+macdmg: macpkg
+	ln -s /Applications "bin/macos/Drag Siren here"
+	hdiutil create bin/Install-Siren.dmg -ov -volname "Install Siren" -fs HFS+ -srcfolder bin/macos/
+	hdiutil convert bin/Install-Siren.dmg -format UDZO -o bin/Siren.dmg
+	rm -f bin/Install-Siren.dmg
+
 clean:
 	@rm -rf $(BUILDDIR)
 
